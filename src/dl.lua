@@ -5,25 +5,22 @@ local dl = {}
 
 function dl.solver (llink, rlink, ulink, dlink, len, items, items_header)
 
-	local options, nsols = {}, 0
 
 	local function all_items_covered ()
 		return rlink[items_header] == items_header end
 		
 	local function looparound_do (start, toward, f)
-		local each = start
-		repeat
-			f (each)
-			each = toward[each]
-		until each == start
+		local each = toward[start]
+		while each ~= start do f (each); each = toward[each] end
 	end
+
+	local options = {}
 
 	local function option (ref)
 
-		local tbl = {}
+		local tbl = {ref.top}
 
 		local function T (each) table.insert (tbl, each.top) end
-			
 		looparound_do (ref, rlink, T)
 
 		return tbl
@@ -31,7 +28,7 @@ function dl.solver (llink, rlink, ulink, dlink, len, items, items_header)
 
 	-- COVERING ------------------------------------------------------------------
 
-	local function H (q) 
+	local function H (q)
 		local x, u, d = q.top, ulink[q], dlink[q]
 		dlink[u], ulink[d] = d, u
 		len[x] = len[x] - 1
@@ -104,6 +101,7 @@ function dl.solver (llink, rlink, ulink, dlink, len, items, items_header)
 	else return nsols end
 
 end
+
 
 
 return dl
