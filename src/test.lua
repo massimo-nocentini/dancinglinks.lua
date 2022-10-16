@@ -44,9 +44,28 @@ end
 function test_langfordpairs ()
 
 	--lu.assertEquals ({}, langfordpair (3))
+	local L = langfordpair (3)
+
+	local P = table.pack(dl.problem (L))
+	local llink, rlink, ulink, dlink, len, top, primary_header, first_secondary_item = table.unpack(P)
+
+	lu.assertEquals (4, len[L.primary['v_1']])
+	lu.assertEquals (3, len[L.primary['v_2']])
+	lu.assertEquals (2, len[L.primary['v_3']])
+	lu.assertEquals (3, len[L.primary['f_1']])
+	lu.assertEquals (3, len[L.primary['f_2']])
+	lu.assertEquals (2, len[L.primary['f_3']])
+	lu.assertEquals (1, len[L.primary['f_4']])
+	lu.assertNil (L.primary['f_5'])
+	lu.assertNil (L.primary['f_6'])
+	lu.assertEquals (1, len[L.primary['s_3']])
+	lu.assertEquals (2, len[L.primary['s_4']])
+	lu.assertEquals (3, len[L.primary['s_5']])
+	lu.assertEquals (3, len[L.primary['s_6']])
+	lu.assertNil (L.primary['s_1'])
+	lu.assertNil (L.primary['s_2'])
+
 	local solver = coroutine.create(dl.solver)
-	local P = table.pack(dl.problem (langfordpair (3)))
-	--lu.assertEquals (P, {})
 	local flag, value = coroutine.resume (solver, table.unpack(P))
 	print (table.concat (value, ', '))
 end
