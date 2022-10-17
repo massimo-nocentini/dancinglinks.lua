@@ -2,6 +2,35 @@
 local lu = require 'luaunit'
 local dl = require 'dl'
 
+local function matrix ()
+	
+	local primary = {
+		v_1 = dl.item('v_1', 1),
+		v_2 = dl.item('v_2', 2),
+		v_3 = dl.item('v_3', 3),
+		v_4 = dl.item('v_4', 4),
+		v_5 = dl.item('v_5', 5),
+		v_6 = dl.item('v_6', 6),
+		v_7 = dl.item('v_7', 7),
+	}
+
+	local options = {
+		{primary.v3, primary.v5},
+		{primary.v1, primary.v4, primary.v7},
+		{primary.v2, primary.v3, primary.v6},
+		{primary.v1, primary.v4, primary.v6},
+		{primary.v2, primary.v7},
+		{primary.v4, primary.v5, primary.v7},
+	}
+	
+	local problem = {
+		primary = primary,
+		options = options,
+	}
+
+	return problem
+end
+
 local function langfordpair (n)
 	
 	local primary, secondary = {}, nil	-- items.
@@ -39,6 +68,31 @@ local function langfordpair (n)
 	}
 
 	return problem
+end
+
+
+function test_matrix ()
+
+	local L = matrix ()
+
+	local P = table.pack(dl.problem (L))
+	local llink, rlink, ulink, dlink, len, top, primary_header, first_secondary_item = table.unpack(P)
+
+	--local solver = coroutine.create(dl.solver)
+	--local flag, value = coroutine.resume (solver, table.unpack(P))
+	--
+	local solver = dl.solver (table.unpack(P))
+	local flag, value = coroutine.resume (solver)
+	lu.assertTrue (flag)
+	lu.assertItemsEquals (value, {
+		{L.primary.v_4, L.primary.v_6, L.primary.v_1},
+		{L.primary.v_3, L.primary.v_5},
+		{L.primary.v_2, L.primary.v_7},
+	})
+
+	local flag, value = coroutine.resume (solver)
+	lu.assertTrue (flag)
+	lu.assertNil (value)	-- just one solution.
 end
 
 function test_langfordpairs ()
@@ -79,14 +133,11 @@ function test_langfordpairs ()
 	lu.assertEquals (L.primary['v_3'], ulink[ulink[ulink[L.primary['v_3']]]])
 	lu.assertEquals (L.primary['v_3'], dlink[dlink[dlink[L.primary['v_3']]]])
 
-	local solver = coroutine.create(dl.solver)
-	local flag, value = coroutine.resume (solver, table.unpack(P))
+	--local solver = coroutine.create(dl.solver)
+	--local flag, value = coroutine.resume (solver, table.unpack(P))
+	local solver = dl.solver (table.unpack(P))
+	local flag, value = coroutine.resume (solver)
 	print(value)
-	print (table.concat (value, ', '))
 end
-
-
-
-
 
 os.exit( lu.LuaUnit.run() )

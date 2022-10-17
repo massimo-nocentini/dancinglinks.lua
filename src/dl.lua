@@ -8,7 +8,7 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 	local function iscovered ()
 		return rlink[primary_header] == primary_header end
 		
-	local function looparound_do (start, toward, f, inclusive)
+	local function loop (start, toward, f, inclusive)
 		if inclusive then
 			local each = start
 			repeat f (each); each = toward[each] until each == start
@@ -17,8 +17,6 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 			while each ~= start do f (each); each = toward[each] end
 		end
 	end
-
-	local options = {}
 
 	local function option (ref)
 
@@ -31,7 +29,7 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 			end})
 
 		local function T (each) table.insert (tbl, top[each]) end
-		looparound_do (ref, rlink, T, true)
+		loop (ref, rlink, T, true)
 
 		return tbl
 	end
@@ -44,10 +42,10 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 		len[x] = len[x] - 1
 	end
 
-	local function hide (p) looparound_do(p, rlink, H) end
+	local function hide (p) loop(p, rlink, H) end
 
 	local function cover (i)
-		looparound_do(i, dlink, hide)
+		loop(i, dlink, hide)
 		local l, r = llink[i], rlink[i]
 		rlink[l], llink[r] = r, l
 	end
@@ -60,53 +58,38 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 		len[x] = len[x] + 1
 	end
 
-	local function unhide (p) looparound_do(p, llink, U) end
+	local function unhide (p) loop(p, llink, U) end
 
 	local function uncover (i)
 		local l, r = llink[i], rlink[i]
 		rlink[l], llink[r] = i, i
-		looparound_do(i, ulink, unhide)	
+		loop(i, ulink, unhide)	
 	end
 
 	------------------------------------------------------------------------------
-	
-	::x1::
-	local l, item, ref = 1, nil, nil	-- to silent the interpreter on goto checks.
 
-	::x2::	
-	if iscovered () then coroutine.yield(options); goto x8 end
+	local function R (l, options)
 
-	::x3::
-	item = rlink[primary_header]	-- just pick the next item to be covered.
-	assert(primary_header ~= item)	-- which hasn't to be the `primary_header`.
-
-	::x4::
-	cover (item)
-	ref = dlink[item]
-	options[l] = option (ref)
-	print (options[l])
-
-	::x5::
-	if ref == item then print (item) goto x7
-	else
-		looparound_do(ref, rlink, function (p) cover(top[p]) end)
-		print 'incrementing l'
-		l = l + 1; goto x2
+		if iscovered () then coroutine.yield(options) 
+		else
+			local item = rlink[primary_header]		-- just pick the next item to be covered.
+			cover (item)
+			loop(item, dlink, function (ref) 
+				options[l] = option (ref)
+				loop(ref, rlink, function (p) cover(top[p]) end)
+				R (l + 1, options)
+				loop(ref, llink, function (p) uncover(top[p]) end)
+				options[l] = nil
+			end)
+			uncover (item)
+		end
 	end
 
-	::x6::
-	looparound_do(ref, llink, function (p) uncover(top[p]) end)
-	item = top[ref]
-	ref = dlink[ref]
-	goto x5
-
-	::x7::
-	uncover (item)
-	
-	::x8::
-	options[l] = nil	-- cleaning it up for the next solution.
-	if l > 1 then l = l - 1; goto x6 end
-
+	return coroutine.create (function () 
+		local options = {}
+		R (1, options) 
+		assert (#options == 0)
+	end)
 end
 
 function dl.problem (P)
@@ -155,23 +138,21 @@ function dl.problem (P)
 			len[o] = len[o] + 1
 
 			local point = {}	-- every single 1 in the model matrix.
-			top[point] = o
-			local q = ulink[o]
-			ulink[point] = q
-			ulink[o] = point
-			dlink[point] = dlink[q]
-			dlink[q] = point
 
-			llink[point] = last
-			rlink[last] = point
+			top[point] = o
+
+			local q = ulink[o]
+			ulink[point], ulink[o] = q, point
+			dlink[point], dlink[q] = o, point
+
+			llink[point], rlink[last]  = last, point
 			last = point
 		end
 
 		assert (not llink[header])
 		local first = rlink[header]
 		rlink[header] = nil
-		rlink[last] = first
-		llink[first] = last
+		rlink[last], llink[first]  = first, last
 	end
 
 	return llink, rlink, ulink, dlink, len, top, primary_header, first_secondary_item
