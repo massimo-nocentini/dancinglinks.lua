@@ -25,7 +25,7 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 			__tostring = function (t) 
 				local m = {}
 				for i, item in ipairs (t) do m[i] = tostring(item) end	-- necessary for the next `concat`.
-				return table.concat(m, ', ') 
+				return '{'..table.concat(m, ', ')..'}'
 			end})
 
 		local function T (each) table.insert (tbl, top[each]) end
@@ -70,15 +70,18 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 
 	local function R (l, options)
 
-		if iscovered () then coroutine.yield(options) 
+		if iscovered () then 
+			--print '-------------'
+			--for k, v in pairs(options) do print(v) end
+			coroutine.yield (options)
 		else
 			local item = rlink[primary_header]		-- just pick the next item to be covered.
 			cover (item)
-			loop(item, dlink, function (ref) 
+			loop (item, dlink, function (ref) 
 				options[l] = option (ref)
-				loop(ref, rlink, function (p) cover(top[p]) end)
+				loop (ref, rlink, function (p) cover(top[p]) end)
 				R (l + 1, options)
-				loop(ref, llink, function (p) uncover(top[p]) end)
+				loop (ref, llink, function (p) uncover(top[p]) end)
 				options[l] = nil
 			end)
 			uncover (item)
