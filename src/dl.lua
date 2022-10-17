@@ -8,19 +8,30 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 	local function iscovered ()
 		return rlink[primary_header] == primary_header end
 		
-	local function looparound_do (start, toward, f)
-		local each = toward[start]
-		while each ~= start do f (each); each = toward[each] end
+	local function looparound_do (start, toward, f, inclusive)
+		if inclusive then
+			local each = start
+			repeat f (each); each = toward[each] until each == start
+		else
+			local each = toward[start]
+			while each ~= start do f (each); each = toward[each] end
+		end
 	end
 
 	local options = {}
 
 	local function option (ref)
 
-		local tbl = {top[ref]}
+		local tbl = {}
+		setmetatable(tbl, {
+			__tostring = function (t) 
+				local m = {}
+				for i, item in ipairs (t) do m[i] = tostring(item) end	-- necessary for the next `concat`.
+				return table.concat(m, ', ') 
+			end})
 
 		local function T (each) table.insert (tbl, top[each]) end
-		looparound_do (ref, rlink, T)
+		looparound_do (ref, rlink, T, true)
 
 		return tbl
 	end
@@ -36,7 +47,6 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 	local function hide (p) looparound_do(p, rlink, H) end
 
 	local function cover (i)
-
 		looparound_do(i, dlink, hide)
 		local l, r = llink[i], rlink[i]
 		rlink[l], llink[r] = r, l
@@ -68,16 +78,19 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 
 	::x3::
 	item = rlink[primary_header]	-- just pick the next item to be covered.
+	assert(primary_header ~= item)	-- which hasn't to be the `primary_header`.
 
 	::x4::
 	cover (item)
 	ref = dlink[item]
 	options[l] = option (ref)
+	print (options[l])
 
 	::x5::
-	if ref == item then goto x7
+	if ref == item then print (item) goto x7
 	else
 		looparound_do(ref, rlink, function (p) cover(top[p]) end)
+		print 'incrementing l'
 		l = l + 1; goto x2
 	end
 
@@ -101,20 +114,17 @@ function dl.problem (P)
 	local llink, rlink, ulink, dlink, len, top = {}, {}, {}, {}, {}, {}
 
 	local primary_header = {}
-	local last_primary_item = primary_header	
+	local last_primary_item = primary_header	-- cursor variable for primary items.
 
 	for id, item in pairs(P.primary) do	-- link primary items
-		ulink[item] = item
-		dlink[item] = item
+		ulink[item], dlink[item] = item, item	-- self loops on the vertical dimension.
 		len[item] = 0
 
-		llink[item] = last_primary_item
-		rlink[last_primary_item] = item
+		llink[item], rlink[last_primary_item] = last_primary_item, item	-- link among the horizontal dimension.
 		last_primary_item = item
 	end
 
-	rlink[last_primary_item] = primary_header
-	llink[primary_header] = last_primary_item
+	rlink[last_primary_item], llink[primary_header] = primary_header, last_primary_item	-- closing the doubly circular list.
 
 	local first_secondary_item = nil
 	if P.secondary then
@@ -123,20 +133,17 @@ function dl.problem (P)
 		local last_secondary_item = secondary_header	
 
 		for id, item in pairs(P.secondary) do	-- link secondary items
-			ulink[item] = item
-			dlink[item] = item
+			ulink[item], dlink[item] = item, item
 			len[item] = 0
 
-			llink[item] = last_secondary_item
-			rlink[last_secondary_item] = item
+			llink[item], rlink[last_secondary_item] = last_secondary_item, item
 			last_secondary_item = item
 		end
 
 		assert (not llink[secondary_header])
 		first_secondary_item = rlink[secondary_header]
 		rlink[secondary_header] = nil
-		rlink[last_primary_item] = first_secondary_item
-		llink[first_secondary_item] = last_secondary_item
+		rlink[last_primary_item], llink[first_secondary_item] = first_secondary_item, last_secondary_item
 	end
 
 	for _, opt in ipairs(P.options) do
@@ -172,7 +179,7 @@ end
 
 function dl.item(id, value)
 	local t = {id = id, value = value}
-	setmetatable(t, {__name = id})
+	setmetatable(t, {__tostring = function (v) return id end})
 	return t
 end
 

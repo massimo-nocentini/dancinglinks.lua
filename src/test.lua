@@ -49,6 +49,15 @@ function test_langfordpairs ()
 	local P = table.pack(dl.problem (L))
 	local llink, rlink, ulink, dlink, len, top, primary_header, first_secondary_item = table.unpack(P)
 
+	local v_1 = L.primary['v_1']
+
+	lu.assertNil(first_secondary_item)
+
+	lu.assertNil (L.primary['f_5'])
+	lu.assertNil (L.primary['f_6'])
+	lu.assertNil (L.primary['s_1'])
+	lu.assertNil (L.primary['s_2'])
+
 	lu.assertEquals (4, len[L.primary['v_1']])
 	lu.assertEquals (3, len[L.primary['v_2']])
 	lu.assertEquals (2, len[L.primary['v_3']])
@@ -56,17 +65,23 @@ function test_langfordpairs ()
 	lu.assertEquals (3, len[L.primary['f_2']])
 	lu.assertEquals (2, len[L.primary['f_3']])
 	lu.assertEquals (1, len[L.primary['f_4']])
-	lu.assertNil (L.primary['f_5'])
-	lu.assertNil (L.primary['f_6'])
 	lu.assertEquals (1, len[L.primary['s_3']])
 	lu.assertEquals (2, len[L.primary['s_4']])
 	lu.assertEquals (3, len[L.primary['s_5']])
 	lu.assertEquals (3, len[L.primary['s_6']])
-	lu.assertNil (L.primary['s_1'])
-	lu.assertNil (L.primary['s_2'])
+
+	lu.assertEquals (L.primary['v_1'], ulink[ulink[ulink[ulink[ulink[L.primary['v_1']]]]]])
+	lu.assertEquals (L.primary['v_1'], dlink[dlink[dlink[dlink[dlink[L.primary['v_1']]]]]])
+
+	lu.assertEquals (L.primary['v_2'], ulink[ulink[ulink[ulink[L.primary['v_2']]]]])
+	lu.assertEquals (L.primary['v_2'], dlink[dlink[dlink[dlink[L.primary['v_2']]]]])
+
+	lu.assertEquals (L.primary['v_3'], ulink[ulink[ulink[L.primary['v_3']]]])
+	lu.assertEquals (L.primary['v_3'], dlink[dlink[dlink[L.primary['v_3']]]])
 
 	local solver = coroutine.create(dl.solver)
 	local flag, value = coroutine.resume (solver, table.unpack(P))
+	print(value)
 	print (table.concat (value, ', '))
 end
 
