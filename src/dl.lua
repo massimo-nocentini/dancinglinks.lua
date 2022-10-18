@@ -51,25 +51,29 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 
 	------------------------------------------------------------------------------
 
+	local function nextitem_naive () 
+		return rlink[primary_header] end
+
+	local function nextitem_minlen () 
+
+		local max, item = math.huge, nil
+		loop (primary_header, rlink, function (each) 
+			local m = len[each] 
+			if m < max then max, item = m, each end
+		end)
+
+		return item
+	end
+
 	local function R (l, options)
 
 		if iscovered () then 
-			--[[jj
-			local f = {}
-			for _, l in pairs(len) do table.insert(f, tostring(l)) end
-			print(table.concat(f, ', '))
-			]]
-
 			local cpy = {} 
 			for k, v in pairs(options) do cpy[k] = v end
 			table.sort(cpy)
 			coroutine.yield (cpy)
 		else
-			local max, item = math.huge, nil
-			loop (primary_header, rlink, function (each) 
-				local m = len[each] 
-				if m < max then max, item = m, each end
-			end)
+			local item = nextitem_minlen ()
 
 			cover (item)
 
@@ -77,11 +81,11 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 
 				options[l] = option[ref]
 
-				loop (ref, rlink, function (p) cover(top[p]) end)
+				loop (ref, rlink, function (p) cover (top[p]) end)
 
 				R (l + 1, options)
 
-				loop (ref, llink, function (p) uncover(top[p]) end)
+				loop (ref, llink, function (p) uncover (top[p]) end)
 
 				options[l] = nil
 			end)
