@@ -209,50 +209,45 @@ function test_nqueens_slack ()
 	lu.assertNil (value)	-- just one solution.
 end
 
+
+
 function test_nqueens_secondary ()
 
 	local n = 4 
+
+	local r, c, a, b = dl.indexed('r'), dl.indexed('c'), dl.indexed('a'), dl.indexed('b')
 
 	local primary = {}
 	local secondary = {}
 	local options = {}
 
 	for i = 1, n do
-		local id_r = 'r_'..tostring(i)
-		local id_c = 'c_'..tostring(i)
+		local id_r = r[i]
+		local id_c = c[i]
 
 		primary[id_r] = dl.item (id_r, i)
 		primary[id_c] = dl.item (id_c, i)
 	end
 
 	for s = 2, 2 * n do
-		local id_a = 'a_'..tostring(s)
+		local id_a = a[s]
 		secondary[id_a] = dl.item (id_a, s)
 	end
 
 	for d = 1-n, n-1 do
-		local id_b = 'b_'..tostring(d)
+		local id_b = b[d]
 		secondary[id_b] = dl.item (id_b, d)
 	end
 	
 	for i = 1, n do
-
-		local id_r = 'r_'..tostring(i)
-		
 		for j = 1, n do
-
-			local id_c = 'c_'..tostring(j)
-
 			local s, d = i + j, i - j
-			local id_a, id_b = 'a_'..tostring(s), 'b_'..tostring(d)
-
 			table.insert(options, {
-				primary[id_r],
-				primary[id_c],
-				secondary[id_a],
-				secondary[id_b]
+				primary[r[i]],
+				primary[c[j]],
+				secondary[a[s]],
+				secondary[b[d]]
 			})
-
 		end
 	end
 	

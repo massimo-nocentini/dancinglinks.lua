@@ -157,6 +157,13 @@ function dl.problem (P)
 	return llink, rlink, ulink, dlink, len, top, option, primary_header, first_secondary_item
 end
 
+function dl.indexed(name)
+
+	local r = {base = name}
+	setmetatable(r, {__index = function (t, i) return t.base..'_'..tostring(i) end})
+	return r
+end
+
 function dl.item(id, value)
 	local t = {id = id, value = value}
 	setmetatable(t, {__tostring = function (v) return id end})
