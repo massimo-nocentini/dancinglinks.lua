@@ -4,23 +4,17 @@ local dl = require 'dl'
 
 function test_matrix ()
 
-	local primary = {
-		v_1 = dl.item('v_1', 1),
-		v_2 = dl.item('v_2', 2),
-		v_3 = dl.item('v_3', 3),
-		v_4 = dl.item('v_4', 4),
-		v_5 = dl.item('v_5', 5),
-		v_6 = dl.item('v_6', 6),
-		v_7 = dl.item('v_7', 7),
-	}
+	local v = dl.indexed('v')
+
+	local primary = { v[1], v[2], v[3], v[4], v[5], v[6], v[7], }
 
 	local options = {
-		{primary.v_3, primary.v_5},
-		{primary.v_1, primary.v_4, primary.v_7},
-		{primary.v_2, primary.v_3, primary.v_6},
-		{primary.v_1, primary.v_4, primary.v_6},
-		{primary.v_2, primary.v_7},
-		{primary.v_4, primary.v_5, primary.v_7},
+		{v[3], v[5]},
+		{v[1], v[4], v[7]},
+		{v[2], v[3], v[6]},
+		{v[1], v[4], v[6]},
+		{v[2], v[7]},
+		{v[4], v[5], v[7]},
 	}
 	
 	local L = {
@@ -43,28 +37,20 @@ end
 
 function test_langfordpairs_3 ()
 
-	local primary = {
-		v_1 = dl.item('v_1', 1),
-		v_2 = dl.item('v_2', 2),
-		v_3 = dl.item('v_3', 3),
-		s_1 = dl.item('s_1', 1),
-		s_2 = dl.item('s_2', 2),
-		s_3 = dl.item('s_3', 3),
-		s_4 = dl.item('s_4', 4),
-		s_5 = dl.item('s_5', 5),
-		s_6 = dl.item('s_6', 6),
-	}
+	local v, s = dl.indexed('v'), dl.indexed('s')
+
+	local primary = { v[1], v[2], v[3], s[1], s[2], s[3], s[4], s[5], s[6], }
 
 	local options = {
-		{primary.v_1, primary.s_1, primary.s_3},
-		{primary.v_1, primary.s_2, primary.s_4},
-		{primary.v_1, primary.s_3, primary.s_5},
-		{primary.v_1, primary.s_4, primary.s_6},
-		{primary.v_2, primary.s_1, primary.s_4},
-		{primary.v_2, primary.s_2, primary.s_5},
-		{primary.v_2, primary.s_3, primary.s_6},
-		{primary.v_3, primary.s_1, primary.s_5},
-		{primary.v_3, primary.s_2, primary.s_6},
+		{v[1], s[1], s[3]},
+		{v[1], s[2], s[4]},
+		{v[1], s[3], s[5]},
+		{v[1], s[4], s[6]},
+		{v[2], s[1], s[4]},
+		{v[2], s[2], s[5]},
+		{v[2], s[3], s[6]},
+		{v[3], s[1], s[5]},
+		{v[3], s[2], s[6]},
 	}
 	
 	local L = {
@@ -93,31 +79,20 @@ function test_langfordpairs_7_count ()
 
 	local n = 7 
 
-	local primary = {}	-- items.
+	local v, s = dl.indexed('v'), dl.indexed('s')
+
+	local primary = {}
 	local options = {}
 
-	for i = 1, 2 * n do
-		local id_i = 's_'..tostring(i)
-		primary[id_i] = dl.item (id_i, i)
-	end
+	for i = 1, 2 * n do table.insert(primary, s[i]) end
 
 	for i = 1, n do
 
-		local id_i = 'v_'..tostring(i)
-		primary[id_i] = dl.item (id_i, i)
+		table.insert(primary, v[i])
 
 		for j = 1, 2 * n do
-			local id_j = 's_'..tostring(j)
-
 			local k = i + j + 1
-
-			if k <= 2 * n then
-				local id_k = 's_'..tostring(k)
-				local item_k = primary[id_k]
-				local item_i = primary[id_i]
-				local item_j = primary[id_j]
-				table.insert(options, {item_i, item_j, item_k})
-			end
+			if k <= 2 * n then table.insert(options, {v[i], s[j], s[k]}) end
 		end
 	end
 	
@@ -141,50 +116,27 @@ end
 function test_nqueens_slack ()
 
 	local n = 4 
+	
+	local r, c, a, b = dl.indexed('r'), dl.indexed('c'), dl.indexed('a'), dl.indexed('b')
 
 	local primary = {}	-- items.
 	local options = {}
 
 	for i = 1, n do
-		local id_r = 'r_'..tostring(i)
-		local id_c = 'c_'..tostring(i)
-
-		primary[id_r] = dl.item (id_r, i)
-		primary[id_c] = dl.item (id_c, i)
+		table.insert(primary, r[i])
+		table.insert(primary, c[i])
 	end
 
-	for s = 2, 2 * n do
-		local id_a = 'a_'..tostring(s)
-		primary[id_a] = dl.item (id_a, s)
-	end
+	for s = 2, 2 * n do table.insert(primary, a[s]) end
 
-	for d = 1-n, n-1 do
-		local id_b = 'b_'..tostring(d)
-		primary[id_b] = dl.item (id_b, d)
-	end
+	for d = 1-n, n-1 do table.insert(primary, b[d]) end
 	
-	for i = 1, n do
-
-		local id_r = 'r_'..tostring(i)
-		
-		for j = 1, n do
-
-			local s, d = i + j, i - j
-			local id_a, id_b = 'a_'..tostring(s), 'b_'..tostring(d)
-			local id_c = 'c_'..tostring(j)
-
-			table.insert(options, {
-				primary[id_r],
-				primary[id_c],
-				primary[id_a],
-				primary[id_b]
-			})
-
-			table.insert(options, { primary[id_a] })
-
-			table.insert(options, { primary[id_b] })
-		end
-	end
+	for i = 1, n do for j = 1, n do
+		local s, d = i + j, i - j
+		table.insert(options, { r[i], c[j], a[s], b[d] })
+		table.insert(options, { a[s] })
+		table.insert(options, { b[d] })
+	end end
 	
 	local L = {
 		primary = primary,
@@ -202,14 +154,20 @@ function test_nqueens_slack ()
 	end
 
 	lu.assertTrue (flag)
-	lu.assertItemsEquals (sol, {1, 4, 5})
+	lu.assertItemsEquals (sol, {
+		{a[2]},
+		{b[0]},
+		{r[1], c[2], a[3], b[-1]},
+		{a[5]},
+		{b[-3]},
+		{r[2], c[4], a[6], b[-2]},
+		{r[3], c[1], a[4], b[2]},
+		{b[3]},
+		{r[4], c[3], a[7], b[1]},
+		{a[8]}
+	})
 
-	local flag, value = coroutine.resume (solver)
-	lu.assertTrue (flag)
-	lu.assertNil (value)	-- just one solution.
 end
-
-
 
 function test_nqueens_secondary ()
 
@@ -222,34 +180,17 @@ function test_nqueens_secondary ()
 	local options = {}
 
 	for i = 1, n do
-		local id_r = r[i]
-		local id_c = c[i]
-
-		primary[id_r] = dl.item (id_r, i)
-		primary[id_c] = dl.item (id_c, i)
+		table.insert(primary, r[i])
+		table.insert(primary, c[i])
 	end
 
-	for s = 2, 2 * n do
-		local id_a = a[s]
-		secondary[id_a] = dl.item (id_a, s)
-	end
+	for s = 2, 2 * n do table.insert(secondary, a[s]) end
 
-	for d = 1-n, n-1 do
-		local id_b = b[d]
-		secondary[id_b] = dl.item (id_b, d)
-	end
+	for d = 1-n, n-1 do table.insert(secondary, b[d]) end
 	
-	for i = 1, n do
-		for j = 1, n do
-			local s, d = i + j, i - j
-			table.insert(options, {
-				primary[r[i]],
-				primary[c[j]],
-				secondary[a[s]],
-				secondary[b[d]]
-			})
-		end
-	end
+	for i = 1, n do for j = 1, n do
+		local s, d = i + j, i - j
+		table.insert(options, { r[i], c[j], a[s], b[d] }) end end
 	
 	local L = {
 		primary = primary,
@@ -267,13 +208,14 @@ function test_nqueens_secondary ()
 		sol[i] = options[iopt]	
 	end
 
-	print (selection)
 	lu.assertTrue (flag)
-	lu.assertItemsEquals (sol, {1, 4, 5})
+	lu.assertItemsEquals (sol, {
+		{r[1], c[2], a[3], b[-1]},
+		{r[2], c[4], a[6], b[-2]},
+		{r[3], c[1], a[4], b[2]},
+		{r[4], c[3], a[7], b[1]}
+	})
 
-	local flag, value = coroutine.resume (solver)
-	lu.assertTrue (flag)
-	lu.assertNil (value)	-- just one solution.
 end
 
 os.exit( lu.LuaUnit.run() )

@@ -109,7 +109,7 @@ function dl.problem (P)
 	local primary_header = {}
 	local last_primary_item = primary_header	-- cursor variable for primary items.
 
-	for id, item in pairs(P.primary) do	-- link primary items
+	for _, item in ipairs(P.primary) do	-- link primary items
 		ulink[item], dlink[item] = item, item	-- self loops on the vertical dimension.
 		len[item] = 0
 
@@ -121,7 +121,7 @@ function dl.problem (P)
 
 	local first_secondary_item = nil
 	if P.secondary then
-		for id, item in pairs(P.secondary) do	-- link secondary items
+		for _, item in pairs(P.secondary) do	-- link secondary items
 			len[item] = 0
 			ulink[item], dlink[item] = item, item
 			llink[item], rlink[item] = item, item
@@ -133,7 +133,10 @@ function dl.problem (P)
 		local header = {}
 		local last = header
 
-		for _, o in ipairs(opt) do
+		for _, id in ipairs(opt) do
+
+			local o = id
+
 			len[o] = len[o] + 1
 
 			local point = {}	-- every single 1 in the model matrix.
