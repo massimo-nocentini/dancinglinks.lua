@@ -138,4 +138,147 @@ function test_langfordpairs_7_count ()
 	lu.assertEquals (count, 52)
 end
 
+function test_nqueens_slack ()
+
+	local n = 4 
+
+	local primary = {}	-- items.
+	local options = {}
+
+	for i = 1, n do
+		local id_r = 'r_'..tostring(i)
+		local id_c = 'c_'..tostring(i)
+
+		primary[id_r] = dl.item (id_r, i)
+		primary[id_c] = dl.item (id_c, i)
+	end
+
+	for s = 2, 2 * n do
+		local id_a = 'a_'..tostring(s)
+		primary[id_a] = dl.item (id_a, s)
+	end
+
+	for d = 1-n, n-1 do
+		local id_b = 'b_'..tostring(d)
+		primary[id_b] = dl.item (id_b, d)
+	end
+	
+	for i = 1, n do
+
+		local id_r = 'r_'..tostring(i)
+		
+		for j = 1, n do
+
+			local s, d = i + j, i - j
+			local id_a, id_b = 'a_'..tostring(s), 'b_'..tostring(d)
+			local id_c = 'c_'..tostring(j)
+
+			table.insert(options, {
+				primary[id_r],
+				primary[id_c],
+				primary[id_a],
+				primary[id_b]
+			})
+
+			table.insert(options, { primary[id_a] })
+
+			table.insert(options, { primary[id_b] })
+		end
+	end
+	
+	local L = {
+		primary = primary,
+		options = options,
+	}
+
+	local P = table.pack(dl.problem (L))
+	local solver = dl.solver (table.unpack(P))
+
+	local flag, selection = coroutine.resume (solver)
+
+	local sol = {}
+	for i, iopt in ipairs(selection) do
+		sol[i] = options[iopt]	
+	end
+
+	lu.assertTrue (flag)
+	lu.assertItemsEquals (sol, {1, 4, 5})
+
+	local flag, value = coroutine.resume (solver)
+	lu.assertTrue (flag)
+	lu.assertNil (value)	-- just one solution.
+end
+
+function test_nqueens_secondary ()
+
+	local n = 4 
+
+	local primary = {}
+	local secondary = {}
+	local options = {}
+
+	for i = 1, n do
+		local id_r = 'r_'..tostring(i)
+		local id_c = 'c_'..tostring(i)
+
+		primary[id_r] = dl.item (id_r, i)
+		primary[id_c] = dl.item (id_c, i)
+	end
+
+	for s = 2, 2 * n do
+		local id_a = 'a_'..tostring(s)
+		secondary[id_a] = dl.item (id_a, s)
+	end
+
+	for d = 1-n, n-1 do
+		local id_b = 'b_'..tostring(d)
+		secondary[id_b] = dl.item (id_b, d)
+	end
+	
+	for i = 1, n do
+
+		local id_r = 'r_'..tostring(i)
+		
+		for j = 1, n do
+
+			local id_c = 'c_'..tostring(j)
+
+			local s, d = i + j, i - j
+			local id_a, id_b = 'a_'..tostring(s), 'b_'..tostring(d)
+
+			table.insert(options, {
+				primary[id_r],
+				primary[id_c],
+				secondary[id_a],
+				secondary[id_b]
+			})
+
+		end
+	end
+	
+	local L = {
+		primary = primary,
+		secondary = secondary,
+		options = options,
+	}
+
+	local P = table.pack(dl.problem (L))
+	local solver = dl.solver (table.unpack(P))
+
+	local flag, selection = coroutine.resume (solver)
+
+	local sol = {}
+	for i, iopt in ipairs(selection) do
+		sol[i] = options[iopt]	
+	end
+
+	print (selection)
+	lu.assertTrue (flag)
+	lu.assertItemsEquals (sol, {1, 4, 5})
+
+	local flag, value = coroutine.resume (solver)
+	lu.assertTrue (flag)
+	lu.assertNil (value)	-- just one solution.
+end
+
 os.exit( lu.LuaUnit.run() )

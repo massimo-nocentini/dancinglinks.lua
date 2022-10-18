@@ -121,22 +121,11 @@ function dl.problem (P)
 
 	local first_secondary_item = nil
 	if P.secondary then
-
-		local secondary_header = {}
-		local last_secondary_item = secondary_header	
-
 		for id, item in pairs(P.secondary) do	-- link secondary items
-			ulink[item], dlink[item] = item, item
 			len[item] = 0
-
-			llink[item], rlink[last_secondary_item] = last_secondary_item, item
-			last_secondary_item = item
+			ulink[item], dlink[item] = item, item
+			llink[item], rlink[item] = item, item
 		end
-
-		assert (not llink[secondary_header])
-		first_secondary_item = rlink[secondary_header]
-		rlink[secondary_header] = nil
-		rlink[last_primary_item], llink[first_secondary_item] = first_secondary_item, last_secondary_item
 	end
 
 	for iopt, opt in ipairs(P.options) do
