@@ -1,6 +1,4 @@
 
-local heapq = require 'heapq'
-
 local dl = {}
 
 function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header, first_secondary_item)
@@ -9,6 +7,7 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 		return rlink[primary_header] == primary_header end
 		
 	local function loop (start, toward, f, inclusive)
+
 		if inclusive then
 			local each = start
 			repeat f (each); each = toward[each] until each == start
@@ -55,20 +54,38 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 	local function R (l, options)
 
 		if iscovered () then 
+			--[[jj
+			local f = {}
+			for _, l in pairs(len) do table.insert(f, tostring(l)) end
+			print(table.concat(f, ', '))
+			]]
+
 			local cpy = {} 
 			for k, v in pairs(options) do cpy[k] = v end
 			table.sort(cpy)
 			coroutine.yield (cpy)
 		else
-			local item = rlink[primary_header]	-- just pick the next item to be covered.
+			local max, item = math.huge, nil
+			loop (primary_header, rlink, function (each) 
+				local m = len[each] 
+				if m < max then max, item = m, each end
+			end)
+
 			cover (item)
+
 			loop (item, dlink, function (ref) 
+
 				options[l] = option[ref]
+
 				loop (ref, rlink, function (p) cover(top[p]) end)
+
 				R (l + 1, options)
+
 				loop (ref, llink, function (p) uncover(top[p]) end)
+
 				options[l] = nil
 			end)
+
 			uncover (item)
 		end
 	end

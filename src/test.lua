@@ -91,7 +91,7 @@ end
 
 function test_langfordpairs_7_count ()
 
-	local n = 7
+	local n = 7 
 
 	local primary = {}	-- items.
 	local options = {}
