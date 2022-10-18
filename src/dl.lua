@@ -65,11 +65,15 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 		return item
 	end
 
-	local function R (l, options)
+	local function R (l, opt)
 
 		if iscovered () then 
 			local cpy = {} 
-			for k, v in pairs(options) do cpy[k] = v end
+			while opt do 
+				cpy[opt.level] = opt.index 
+				opt = opt.nextoption 
+			end
+
 			table.sort(cpy)
 			coroutine.yield (cpy)
 		else
@@ -79,72 +83,23 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 
 			loop (item, dlink, function (ref) 
 
-				options[l] = option[ref]
-
 				loop (ref, rlink, function (p) cover (top[p]) end)
 
-				R (l + 1, options)
+				R (l + 1, { 
+					level = l, 
+					index = option[ref], 
+					nextoption = opt, 
+				})
 
 				loop (ref, llink, function (p) uncover (top[p]) end)
 
-				options[l] = nil
 			end)
 
 			uncover (item)
 		end
 	end
 
-	local function G (l, options)
-
-		::x1::
-		local item, ref = nil, {}	-- to silent the interpreter on goto checks.
-
-		::x2::	
-		if iscovered () then 
-			local cpy = {} 
-			for k, v in pairs(options) do cpy[k] = v end
-			table.sort(cpy)
-			coroutine.yield (cpy)
-			goto x8 
-		end
-
-		::x3::
-		item = rlink[primary_header]		-- just pick the next item to be covered.
-		assert(primary_header ~= item)		-- which hasn't to be the `primary_header`.
-
-		::x4::
-		cover (item)
-		ref[l] = dlink[item]
-		options[l] = option[ref[l]]
-
-		::x5::
-		if ref[l] == item then goto x7
-		else
-			loop (ref[l], rlink, function (p) cover(top[p]) end)
-			l = l + 1; goto x2
-		end
-
-		::x6::
-		loop (ref[l], llink, function (p) uncover(top[p]) end)
-		item = top[ref[l]]
-		ref[l] = dlink[ref[l]]
-		goto x5
-
-		::x7::
-		uncover (item)
-		
-		::x8::
-		options[l] = nil	-- cleaning it up for the next solution.
-		item, ref[l] = nil, nil
-		if l > 1 then l = l - 1; goto x6 end
-
-	end
-
-	return coroutine.create (function () 
-		local options = {}
-		R (1, options) 
-		assert (#options == 0)
-	end)
+	return coroutine.create (function () R (1, nil) end)
 end
 
 function dl.problem (P)
