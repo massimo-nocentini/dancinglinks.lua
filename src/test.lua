@@ -2,8 +2,8 @@
 local lu = require 'luaunit'
 local dl = require 'dl'
 
-local function matrix ()
-	
+function test_matrix ()
+
 	local primary = {
 		v_1 = dl.item('v_1', 1),
 		v_2 = dl.item('v_2', 2),
@@ -23,16 +23,26 @@ local function matrix ()
 		{primary.v_4, primary.v_5, primary.v_7},
 	}
 	
-	local problem = {
+	local L = {
 		primary = primary,
 		options = options,
 	}
 
-	return problem
+	local P = table.pack(dl.problem (L))
+	local solver = dl.solver (table.unpack(P))
+
+	local flag, value = coroutine.resume (solver)
+
+	lu.assertTrue (flag)
+	lu.assertItemsEquals (value, {1, 4, 5})
+
+	local flag, value = coroutine.resume (solver)
+	lu.assertTrue (flag)
+	lu.assertNil (value)	-- just one solution.
 end
 
-local function langfordpair ()
-	
+function test_langfordpairs_3 ()
+
 	local primary = {
 		v_1 = dl.item('v_1', 1),
 		v_2 = dl.item('v_2', 2),
@@ -57,21 +67,36 @@ local function langfordpair ()
 		{primary.v_3, primary.s_2, primary.s_6},
 	}
 	
-	local problem = {
+	local L = {
 		primary = primary,
 		options = options,
 	}
 
-	return problem
+	local P = table.pack(dl.problem (L))
+	local solver = dl.solver (table.unpack(P))
+
+	local sols = {}
+
+	local flag, permutation = coroutine.resume (solver)
+	table.insert(sols, permutation)
+	
+	local flag, permutation = coroutine.resume (solver)
+	table.insert(sols, permutation)
+
+	lu.assertItemsEquals (sols, {{2, 7, 8}, {3, 5, 9}})
+
+	local flag, permutation = coroutine.resume (solver)
+	lu.assertNil(permutation)
 end
 
-local function langfordpair_1 (n)
-	
+function test_langfordpairs_7_count ()
+
+	local n = 7
+
 	local primary = {}	-- items.
 	local options = {}
 
 	for i = 1, 2 * n do
-
 		local id_i = 's_'..tostring(i)
 		primary[id_i] = dl.item (id_i, i)
 	end
@@ -87,68 +112,19 @@ local function langfordpair_1 (n)
 			local k = i + j + 1
 
 			if k <= 2 * n then
-				local item_i = primary[id_i]
-
-				local item_j = primary[id_j]
-
 				local id_k = 's_'..tostring(k)
 				local item_k = primary[id_k]
-
+				local item_i = primary[id_i]
+				local item_j = primary[id_j]
 				table.insert(options, {item_i, item_j, item_k})
 			end
 		end
 	end
 	
-	local problem = {
+	local L = {
 		primary = primary,
 		options = options,
 	}
-
-	return problem
-end
-
-
-function test_matrix ()
-
-	local L = matrix ()
-
-	local P = table.pack(dl.problem (L))
-	local llink, rlink, ulink, dlink, len, top, primary_header, first_secondary_item = table.unpack(P)
-
-	--local solver = coroutine.create(dl.solver)
-	--local flag, value = coroutine.resume (solver, table.unpack(P))
-	--
-	local solver = dl.solver (table.unpack(P))
-	local flag, value = coroutine.resume (solver)
-	lu.assertTrue (flag)
-	lu.assertItemsEquals (value, {
-		{L.primary.v_4, L.primary.v_6, L.primary.v_1},
-		{L.primary.v_3, L.primary.v_5},
-		{L.primary.v_2, L.primary.v_7},
-	})
-
-	local flag, value = coroutine.resume (solver)
-	lu.assertTrue (flag)
-	lu.assertNil (value)	-- just one solution.
-end
-
-function test_langfordpairs ()
-
-	local L = langfordpair ()
-
-	local P = table.pack(dl.problem (L))
-	local llink, rlink, ulink, dlink, len, top, primary_header, first_secondary_item = table.unpack(P)
-
-	local solver = dl.solver (table.unpack(P))
-	local flag, value = coroutine.resume (solver)
-	local flag, value = coroutine.resume (solver)
-	local flag, value = coroutine.resume (solver)
-	lu.assertNil(value)
-end
-
-function test_langfordpairs_1 ()
-
-	local L = langfordpair_1 (11)
 
 	local P = table.pack(dl.problem (L))
 	local solver = dl.solver (table.unpack(P))
@@ -159,7 +135,7 @@ function test_langfordpairs_1 ()
 		count = count + 1
 	until not value
 
-	print(count)
+	lu.assertEquals (count, 52)
 end
 
 os.exit( lu.LuaUnit.run() )

@@ -3,7 +3,7 @@ local heapq = require 'heapq'
 
 local dl = {}
 
-function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_secondary_item)
+function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header, first_secondary_item)
 
 	local function iscovered ()
 		return rlink[primary_header] == primary_header end
@@ -16,22 +16,6 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 			local each = toward[start]
 			while each ~= start do f (each); each = toward[each] end
 		end
-	end
-
-	local function option (ref)
-
-		local tbl = {}
-		setmetatable(tbl, {
-			__tostring = function (t) 
-				local m = {}
-				for i, item in ipairs (t) do m[i] = tostring(item) end	-- necessary for the next `concat`.
-				return '{'..table.concat(m, ', ')..'}'
-			end})
-
-		local function T (each) table.insert (tbl, top[each]) end
-		loop (ref, rlink, T, true)
-
-		return tbl
 	end
 
 	-- COVERING ------------------------------------------------------------------
@@ -71,14 +55,15 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, primary_header, first_
 	local function R (l, options)
 
 		if iscovered () then 
-			--print '-------------'
-			--for k, v in pairs(options) do print(v) end
-			coroutine.yield (options)
+			local cpy = {} 
+			for k, v in pairs(options) do cpy[k] = v end
+			table.sort(cpy)
+			coroutine.yield (cpy)
 		else
-			local item = rlink[primary_header]		-- just pick the next item to be covered.
+			local item = rlink[primary_header]	-- just pick the next item to be covered.
 			cover (item)
 			loop (item, dlink, function (ref) 
-				options[l] = option (ref)
+				options[l] = option[ref]
 				loop (ref, rlink, function (p) cover(top[p]) end)
 				R (l + 1, options)
 				loop (ref, llink, function (p) uncover(top[p]) end)
@@ -97,7 +82,7 @@ end
 
 function dl.problem (P)
 
-	local llink, rlink, ulink, dlink, len, top = {}, {}, {}, {}, {}, {}
+	local llink, rlink, ulink, dlink, len, top, option = {}, {}, {}, {}, {}, {}, {}
 
 	local primary_header = {}
 	local last_primary_item = primary_header	-- cursor variable for primary items.
@@ -132,7 +117,7 @@ function dl.problem (P)
 		rlink[last_primary_item], llink[first_secondary_item] = first_secondary_item, last_secondary_item
 	end
 
-	for _, opt in ipairs(P.options) do
+	for iopt, opt in ipairs(P.options) do
 
 		local header = {}
 		local last = header
@@ -142,7 +127,7 @@ function dl.problem (P)
 
 			local point = {}	-- every single 1 in the model matrix.
 
-			top[point] = o
+			top[point], option[point] = o, iopt
 
 			local q = ulink[o]
 			ulink[point], ulink[o] = q, point
@@ -158,7 +143,7 @@ function dl.problem (P)
 		rlink[last], llink[first]  = first, last
 	end
 
-	return llink, rlink, ulink, dlink, len, top, primary_header, first_secondary_item
+	return llink, rlink, ulink, dlink, len, top, option, primary_header, first_secondary_item
 end
 
 function dl.item(id, value)
