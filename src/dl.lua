@@ -33,6 +33,8 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 		rlink[l], llink[r] = r, l
 	end
 
+	local function covertop (p) 	cover (top[p]) end
+
 	-- UNCOVERING ----------------------------------------------------------------
 
 	local function U (q)
@@ -48,6 +50,8 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 		rlink[l], llink[r] = i, i
 		loop(i, ulink, unhide)	
 	end
+
+	local function uncovertop (p) 	uncover (top[p]) end
 
 	------------------------------------------------------------------------------
 
@@ -83,7 +87,7 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 
 			loop (item, dlink, function (ref) 
 
-				loop (ref, rlink, function (p) cover (top[p]) end)
+				loop (ref, rlink, covertop)
 
 				R (l + 1, { 
 					level = l, 
@@ -91,7 +95,7 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 					nextoption = opt, 
 				})
 
-				loop (ref, llink, function (p) uncover (top[p]) end)
+				loop (ref, llink, uncovertop)
 
 			end)
 
