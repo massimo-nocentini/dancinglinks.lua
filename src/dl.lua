@@ -1,7 +1,7 @@
 
 local dl = {}
 
-function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header, first_secondary_item)
+function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header)
 
 	local function iscovered ()
 		return rlink[primary_header] == primary_header end
@@ -119,13 +119,10 @@ function dl.problem (P)
 
 	rlink[last_primary_item], llink[primary_header] = primary_header, last_primary_item	-- closing the doubly circular list.
 
-	local first_secondary_item = nil
-	if P.secondary then
-		for _, item in pairs(P.secondary) do	-- link secondary items
-			len[item] = 0
-			ulink[item], dlink[item] = item, item
-			llink[item], rlink[item] = item, item
-		end
+	for _, item in pairs(P.secondary or {}) do	-- link secondary items
+		len[item] = 0
+		ulink[item], dlink[item] = item, item
+		llink[item], rlink[item] = item, item
 	end
 
 	for iopt, opt in ipairs(P.options) do
@@ -157,7 +154,7 @@ function dl.problem (P)
 		rlink[last], llink[first]  = first, last
 	end
 
-	return llink, rlink, ulink, dlink, len, top, option, primary_header, first_secondary_item
+	return llink, rlink, ulink, dlink, len, top, option, primary_header
 end
 
 function dl.indexed(name)
@@ -165,12 +162,6 @@ function dl.indexed(name)
 	local r = {base = name}
 	setmetatable(r, {__index = function (t, i) return t.base..'_'..tostring(i) end})
 	return r
-end
-
-function dl.item(id, value)
-	local t = {id = id, value = value}
-	setmetatable(t, {__tostring = function (v) return id end})
-	return t
 end
 
 return dl
