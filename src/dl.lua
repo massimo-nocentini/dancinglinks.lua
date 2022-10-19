@@ -164,9 +164,12 @@ end
 function dl.indexed(name)
 
 	local r = {base = name}
-	setmetatable(r, {__index = function (t, i) 
-		if type(i) == 'table' then i = table.concat(i, ',') end
-		return t.base..'_'..tostring(i) end})
+	setmetatable(r, {
+		__index = function (t, i) 
+			if type(i) == 'table' then i = table.concat(i, ',') end
+			return t.base..'_'..tostring(i) 
+		end
+	})
 	return r
 end
 

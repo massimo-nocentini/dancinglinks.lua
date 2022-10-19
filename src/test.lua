@@ -257,13 +257,13 @@ function test_sudoku ()
 	local sol = {}
 	for i, iopt in ipairs(selection) do
 		sol[i] = options[iopt]	
+		--print (table.concat (sol[i], ' '))
 	end
 
+	lu.assertTrue (flag)
 	lu.assertEquals (#L.primary, 4*9*9)
 	lu.assertEquals (count, 9*9*9)
-	lu.assertTrue (flag)
-	lu.assertItemsEquals (sol, {
-	})
+	lu.assertEquals (#selection, 9*9)
 
 end
 
