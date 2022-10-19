@@ -218,4 +218,53 @@ function test_nqueens_secondary ()
 
 end
 
+function test_sudoku ()
+
+	local n = 9
+	local nsqrt = math.tointeger (math.sqrt (n))
+
+	local p, r, c, b = dl.indexed('p'), dl.indexed('r'), dl.indexed('c'), dl.indexed('b')
+
+	local primary = {}
+	local options = {}
+
+	local count = 0
+	for i = 0, n - 1 do for j = 0, n - 1 do for k = 1, n do
+		local x = nsqrt * math.floor (i/nsqrt) + math.floor (j/nsqrt)
+
+		primary[p[{i, j}]] = true
+		primary[r[{i, k}]] = true
+		primary[c[{j, k}]] = true
+		primary[b[{x, k}]] = true
+		
+		table.insert(options, { p[{i, j}], r[{i, k}], c[{j, k}], b[{x, k}] }) 
+		count = count + 1
+
+	end end end
+	
+	local L = {
+		primary = {},
+		options = options,
+	}
+
+	for k, _ in pairs (primary) do table.insert (L.primary, k) end
+
+	local P = table.pack(dl.problem (L))
+	local solver = dl.solver (table.unpack(P))
+
+	local flag, selection = coroutine.resume (solver)
+
+	local sol = {}
+	for i, iopt in ipairs(selection) do
+		sol[i] = options[iopt]	
+	end
+
+	lu.assertEquals (#L.primary, 4*9*9)
+	lu.assertEquals (count, 9*9*9)
+	lu.assertTrue (flag)
+	lu.assertItemsEquals (sol, {
+	})
+
+end
+
 os.exit( lu.LuaUnit.run() )
