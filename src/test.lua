@@ -1,10 +1,10 @@
 
 local lu = require 'luaunit'
-local exactcover = require 'exactcover'
+local ec = require 'exactcover'
 
 function test_matrix ()
 
-	local v = exactcover.indexed('v')
+	local v = ec.indexed('v')
 
 	local L = { items = {}, options = {} }
 
@@ -25,8 +25,8 @@ function test_matrix ()
 		{v {4}, v {5}, v {7}},
 	}
 	
-	local P = table.pack(exactcover.problem (L))
-	local solver = exactcover.solver (table.unpack(P))
+	local P = table.pack(ec.problem (L))
+	local solver = ec.solver (table.unpack(P))
 
 	local flag, value = coroutine.resume (solver)
 
@@ -40,7 +40,7 @@ end
 
 function test_langfordpairs_3 ()
 
-	local v, s = exactcover.indexed('v'), exactcover.indexed('s')
+	local v, s = ec.indexed('v'), ec.indexed('s')
 
 	local L = { items = {}, options = {} }
 
@@ -66,8 +66,8 @@ function test_langfordpairs_3 ()
 		{v {3}, s {2}, s {6}},
 	}
 
-	local P = table.pack(exactcover.problem (L))
-	local solver = exactcover.solver (table.unpack(P))
+	local P = table.pack(ec.problem (L))
+	local solver = ec.solver (table.unpack(P))
 
 	local sols = {}
 
@@ -87,7 +87,7 @@ function test_langfordpairs_7_count ()
 
 	local n = 7 
 
-	local v, s = exactcover.indexed('v'), exactcover.indexed('s')
+	local v, s = ec.indexed('v'), ec.indexed('s')
 
 	local L = { items = {}, options = {} }
 
@@ -100,8 +100,8 @@ function test_langfordpairs_7_count ()
 		if k <= 2 * n then table.insert(L.options, {v {i}, s {j}, s {k}}) end
 	end end
 
-	local P = table.pack(exactcover.problem (L))
-	local solver = exactcover.solver (table.unpack(P))
+	local P = table.pack(ec.problem (L))
+	local solver = ec.solver (table.unpack(P))
 
 	local count = -1
 	repeat
@@ -116,7 +116,7 @@ function test_nqueens_slack ()
 
 	local n = 4 
 	
-	local r, c, a, b = exactcover.indexed('r'), exactcover.indexed('c'), exactcover.indexed('a'), exactcover.indexed('b')
+	local r, c, a, b = ec.indexed('r'), ec.indexed('c'), ec.indexed('a'), ec.indexed('b')
 
 	local L = { items = {}, options = {} }
 	
@@ -134,8 +134,8 @@ function test_nqueens_slack ()
 		table.insert(L.options, { b {d} })
 	end end
 
-	local P = table.pack(exactcover.problem (L))
-	local solver = exactcover.solver (table.unpack(P))
+	local P = table.pack(ec.problem (L))
+	local solver = ec.solver (table.unpack(P))
 
 	local flag, selection = coroutine.resume (solver)
 
@@ -164,7 +164,7 @@ function test_nqueens_secondary ()
 
 	local n = 4 
 
-	local r, c, a, b = exactcover.indexed('r'), exactcover.indexed('c'), exactcover.indexed('a'), exactcover.indexed('b')
+	local r, c, a, b = ec.indexed('r'), ec.indexed('c'), ec.indexed('a'), ec.indexed('b')
 
 	local L = { items = {}, options = {} }
 
@@ -179,8 +179,8 @@ function test_nqueens_secondary ()
 		table.insert(L.options, { r {i}, c {j}, a {s}, b {d} })
 	end end
 
-	local P = table.pack(exactcover.problem (L))
-	local solver = exactcover.solver (table.unpack(P))
+	local P = table.pack(ec.problem (L))
+	local solver = ec.solver (table.unpack(P))
 
 	local flag, selection = coroutine.resume (solver)
 
@@ -204,7 +204,7 @@ function test_sudoku ()
 	local n = 9
 	local nsqrt = math.tointeger (math.sqrt (n))
 
-	local p, r, c, b = exactcover.indexed('p'), exactcover.indexed('r'), exactcover.indexed('c'), exactcover.indexed('b')
+	local p, r, c, b = ec.indexed('p'), ec.indexed('r'), ec.indexed('c'), ec.indexed('b')
 
 	local L = { items = {}, options = {}, }	-- our problem
 
@@ -222,8 +222,8 @@ function test_sudoku ()
 		count = count + 1
 	end end end
 
-	local P = table.pack(exactcover.problem (L))
-	local solver = exactcover.solver (table.unpack(P))
+	local P = table.pack(ec.problem (L))
+	local solver = ec.solver (table.unpack(P))
 
 	local flag, selection = coroutine.resume (solver)
 
