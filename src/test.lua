@@ -234,4 +234,50 @@ function test_sudoku ()
 
 end
 
+function test_two_crosswords ()
+
+	local n = 9
+	local nsqrt = math.tointeger (math.sqrt (n))
+
+	local l, p = ec.indexed('l'), ec.indexed('p')
+
+	local L = { items = {}, options = {} }	-- our problem
+
+	local name = 'utah'
+	L.items[ l {name} ] = { isprimary = true } 
+	for j = 1, 5 do
+		local option = { l {name} }
+		for i, code in ipairs(table.pack(string.byte (name, 1, #name))) do
+			option[p {i, j}] = {color = code}
+			L.items[ p {i, j} ] = { isprimary = false } 
+		end
+		table.insert(L.options, option)
+	end
+
+	name = 'knuth'
+	L.items[ l {name} ] = { isprimary = true } 
+	for i = 1, 4 do
+		local option = { l {name} }
+		for j, code in ipairs(table.pack(string.byte (name, 1, #name))) do
+			option[ p {i, j} ] = {color = code}
+			L.items[ p {i, j} ] = { isprimary = false } 
+		end
+		table.insert(L.options, option)
+	end
+
+	local solver = ec.solver (L)
+
+	local flag, selection = coroutine.resume (solver)	-- skip the first one.
+	flag, selection = coroutine.resume (solver)
+
+	local sol = {}
+	for i, iopt in ipairs(selection) do
+		sol[i] = L.options[iopt]	
+		--print (table.concat (sol[i], ' '))
+	end
+	lu.assertTrue (flag)
+	lu.assertEquals (sol, {})
+
+end
+
 os.exit( lu.LuaUnit.run() )
