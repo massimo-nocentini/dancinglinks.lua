@@ -25,8 +25,7 @@ function test_matrix ()
 		{v {4}, v {5}, v {7}},
 	}
 	
-	local P = table.pack(ec.problem (L))
-	local solver = ec.solver (table.unpack(P))
+	local solver = ec.solver (L)
 
 	local flag, value = coroutine.resume (solver)
 
@@ -66,8 +65,7 @@ function test_langfordpairs_3 ()
 		{v {3}, s {2}, s {6}},
 	}
 
-	local P = table.pack(ec.problem (L))
-	local solver = ec.solver (table.unpack(P))
+	local solver = ec.solver (L)
 
 	local sols = {}
 
@@ -100,8 +98,7 @@ function test_langfordpairs_7_count ()
 		if k <= 2 * n then table.insert(L.options, {v {i}, s {j}, s {k}}) end
 	end end
 
-	local P = table.pack(ec.problem (L))
-	local solver = ec.solver (table.unpack(P))
+	local solver = ec.solver (L)
 
 	local count = -1
 	repeat
@@ -134,8 +131,7 @@ function test_nqueens_slack ()
 		table.insert(L.options, { b {d} })
 	end end
 
-	local P = table.pack(ec.problem (L))
-	local solver = ec.solver (table.unpack(P))
+	local solver = ec.solver (L)
 
 	local flag, selection = coroutine.resume (solver)
 
@@ -179,8 +175,7 @@ function test_nqueens_secondary ()
 		table.insert(L.options, { r {i}, c {j}, a {s}, b {d} })
 	end end
 
-	local P = table.pack(ec.problem (L))
-	local solver = ec.solver (table.unpack(P))
+	local solver = ec.solver (L)
 
 	local flag, selection = coroutine.resume (solver)
 
@@ -221,8 +216,7 @@ function test_sudoku ()
 
 	end end end
 
-	local P = table.pack(ec.problem (L))
-	local solver = ec.solver (table.unpack(P))
+	local solver = ec.solver (L)
 
 	local flag, selection = coroutine.resume (solver)
 

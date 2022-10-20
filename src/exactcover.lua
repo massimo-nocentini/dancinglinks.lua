@@ -1,7 +1,66 @@
 
 local dl = {}
 
-function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header, P)
+function dl.solver (P)
+
+	local llink, rlink, ulink, dlink, len, top, option = {}, {}, {}, {}, {}, {}, {}
+
+	local primary_header = {}
+	local last_primary_item = primary_header	-- cursor variable for primary items.
+
+	local primarysize, secondarysize = 0, 0
+
+	for item, descriptor in pairs(P.items) do	-- link primary items
+
+		len[item] = 0
+
+		if descriptor.isprimary then
+
+			ulink[item], dlink[item] = item, item	-- self loops on the vertical dimension.
+			llink[item], rlink[last_primary_item] = last_primary_item, item	-- link among the horizontal dimension.
+			last_primary_item = item
+			primarysize = primarysize + 1
+		else 
+			ulink[item], dlink[item] = item, item
+			llink[item], rlink[item] = item, item
+			secondarysize = secondarysize + 1
+		end
+	end
+
+	P.primarysize, P.secondarysize = primarysize, secondarysize	-- update the given problem, in place.
+
+	rlink[last_primary_item], llink[primary_header] = primary_header, last_primary_item	-- closing the doubly circular list.
+
+	for iopt, opt in ipairs(P.options) do
+
+		local header = {}
+		local last = header
+
+		for _, id in ipairs(opt) do
+
+			local o = id
+
+			len[o] = len[o] + 1
+
+			local point = {}	-- every single 1 in the model matrix.
+
+			top[point], option[point] = o, iopt
+
+			local q = ulink[o]
+			ulink[point], ulink[o] = q, point
+			dlink[point], dlink[q] = o, point
+
+			llink[point], rlink[last]  = last, point
+			last = point
+		end
+
+		assert (not llink[header])
+		local first = rlink[header]
+		rlink[header] = nil
+		rlink[last], llink[first]  = first, last
+	end
+
+	-- HELPERS  ------------------------------------------------------------------
 
 	local function iscovered ()
 		return rlink[primary_header] == primary_header end
@@ -16,6 +75,30 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 			while each ~= start do f (each); each = toward[each] end
 		end
 	end
+
+	local function nextitem_naive () 
+		return rlink[primary_header] end
+
+	local function nextitem_minlen () 
+
+		local max, items, optionssize, pool = math.huge, P.items, #P.options, {}
+
+		loop (primary_header, rlink, function (each) 
+			local m = len[each] 
+			assert (m > -1)
+
+			--if (not items[each].issharp) and m < 2 then m = m + optionssize end 
+
+			if m == max then table.insert (pool, each) 
+			elseif m < max then max, pool = m, { each } end
+		end)
+
+		assert (#pool > 0)
+
+		return pool[math.random(#pool)]
+			
+	end
+
 
 	-- COVERING ------------------------------------------------------------------
 
@@ -55,29 +138,6 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 
 	------------------------------------------------------------------------------
 
-	local function nextitem_naive () 
-		return rlink[primary_header] end
-
-	local function nextitem_minlen () 
-
-		local max, items, optionssize, pool = math.huge, P.items, #P.options, {}
-
-		loop (primary_header, rlink, function (each) 
-			local m = len[each] 
-			assert (m > -1)
-
-			--if (not items[each].issharp) and m < 2 then m = m + optionssize end 
-
-			if m == max then table.insert (pool, each) 
-			elseif m < max then max, pool = m, { each } end
-		end)
-
-		assert (#pool > 0)
-
-		return pool[math.random(#pool)]
-			
-	end
-
 	local function R (l, opt)
 
 		if iscovered () then 
@@ -113,68 +173,6 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 	end
 
 	return coroutine.create (function () R (1, nil) end)
-end
-
-function dl.problem (P)
-
-	local llink, rlink, ulink, dlink, len, top, option = {}, {}, {}, {}, {}, {}, {}
-
-	local primary_header = {}
-	local last_primary_item = primary_header	-- cursor variable for primary items.
-
-	local primarysize, secondarysize = 0, 0
-
-	for item, descriptor in pairs(P.items) do	-- link primary items
-
-		len[item] = 0
-
-		if descriptor.isprimary then
-
-			ulink[item], dlink[item] = item, item	-- self loops on the vertical dimension.
-			llink[item], rlink[last_primary_item] = last_primary_item, item	-- link among the horizontal dimension.
-			last_primary_item = item
-			primarysize = primarysize + 1
-		else 
-			ulink[item], dlink[item] = item, item
-			llink[item], rlink[item] = item, item
-			secondarysize = secondarysize + 1
-		end
-	end
-
-	P.primarysize, P.secondarysize = primarysize, secondarysize
-
-	rlink[last_primary_item], llink[primary_header] = primary_header, last_primary_item	-- closing the doubly circular list.
-
-	for iopt, opt in ipairs(P.options) do
-
-		local header = {}
-		local last = header
-
-		for _, id in ipairs(opt) do
-
-			local o = id
-
-			len[o] = len[o] + 1
-
-			local point = {}	-- every single 1 in the model matrix.
-
-			top[point], option[point] = o, iopt
-
-			local q = ulink[o]
-			ulink[point], ulink[o] = q, point
-			dlink[point], dlink[q] = o, point
-
-			llink[point], rlink[last]  = last, point
-			last = point
-		end
-
-		assert (not llink[header])
-		local first = rlink[header]
-		rlink[header] = nil
-		rlink[last], llink[first]  = first, last
-	end
-
-	return llink, rlink, ulink, dlink, len, top, option, primary_header, P
 end
 
 function dl.indexed(name)
