@@ -178,7 +178,9 @@ end
 function dl.indexed(name)
 
 	return function (tbl)
-		return name .. '_' .. table.concat (tbl, ',') end	
+		local seq = {}
+		for i, item in ipairs(tbl) do seq[i] = item end
+		return name .. '_' .. table.concat (seq, ',') end	
 end
 
 return dl
