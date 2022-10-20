@@ -1,7 +1,7 @@
 
 local dl = {}
 
-function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header)
+function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header, P)
 
 	local function iscovered ()
 		return rlink[primary_header] == primary_header end
@@ -60,13 +60,28 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 
 	local function nextitem_minlen () 
 
-		local max, item = math.huge, nil
+		local pool, postponed = {}, {}
+		local max = math.huge
+
 		loop (primary_header, rlink, function (each) 
 			local m = len[each] 
-			if m < max then max, item = m, each end
+			assert (m > -1)
+
+			if false and (not P.items[each].issharp) and m < 2 then 
+				table.insert(postponed, each)
+			else 
+				if m == max then table.insert (pool, each) 
+				elseif m < max then max, pool = m, {each} end
+			end
 		end)
 
-		return item
+		--[[
+		if #pool == 0 then pool = postponed end
+		if #pool == 0 then print 'error' end
+		]]
+
+		return pool[math.random(#pool)]
+			
 	end
 
 	local function R (l, opt)
@@ -165,7 +180,7 @@ function dl.problem (P)
 		rlink[last], llink[first]  = first, last
 	end
 
-	return llink, rlink, ulink, dlink, len, top, option, primary_header
+	return llink, rlink, ulink, dlink, len, top, option, primary_header, P
 end
 
 function dl.indexed(name)
