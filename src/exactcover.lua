@@ -3,7 +3,9 @@ local dl = {}
 
 function dl.solver (P)
 
-	local llink, rlink, ulink, dlink, len, top, option = {}, {}, {}, {}, {}, {}, {}
+	local nocolor, handledcolor = {}, {}	-- just witnesses.
+
+	local llink, rlink, ulink, dlink, len, top, option, color = {}, {}, {}, {}, {}, {}, {}, {}
 
 	local primary_header = {}
 	local last_primary_item = primary_header	-- cursor variable for primary items.
@@ -36,15 +38,17 @@ function dl.solver (P)
 		local header = {}
 		local last = header
 
-		for _, id in ipairs(opt) do
+		for id, decoration in pairs(opt) do
 
+			if type (id) == 'number' then id, decoration = decoration, {} end
+			
 			local o = id
 
 			len[o] = len[o] + 1
 
 			local point = {}	-- every single 1 in the model matrix.
 
-			top[point], option[point] = o, iopt
+			top[point], option[point], color[point] = o, iopt, decoration.color or nocolor
 
 			local q = ulink[o]
 			ulink[point], ulink[o] = q, point
@@ -99,10 +103,12 @@ function dl.solver (P)
 			
 	end
 
-
 	-- COVERING ------------------------------------------------------------------
 
 	local function H (q)
+
+		if q == handledcolor then return end
+
 		local x, u, d = top[q], ulink[q], dlink[q]
 		dlink[u], ulink[d] = d, u
 		len[x] = len[x] - 1
@@ -110,17 +116,33 @@ function dl.solver (P)
 
 	local function hide (p) loop(p, rlink, H) end
 
+	local function purify (p)
+
+		local c = color[p]
+		
+		loop (top[p], dlink, function (q)
+			if color[q] == c then color[q] = handledcolor else hide (q) end
+		end)
+	end
+
 	local function cover (i)
 		loop(i, dlink, hide)
 		local l, r = llink[i], rlink[i]
 		rlink[l], llink[r] = r, l
 	end
 
-	local function covertop (p) 	cover (top[p]) end
+	local function commit (i, p)
+		if color[p] == nocolor then cover (i) else purify (p) end
+	end
+
+	local function covertop (p) 	commit (top[p], p) end
 
 	-- UNCOVERING ----------------------------------------------------------------
 
 	local function U (q)
+
+		if q == handledcolor then return end
+
 		local x, u, d = top[q], ulink[q], dlink[q]
 		dlink[u], ulink[d] = q, q
 		len[x] = len[x] + 1
@@ -128,13 +150,26 @@ function dl.solver (P)
 
 	local function unhide (p) loop(p, llink, U) end
 
+	local function unpurify (p)
+
+		local c = color[p]
+		
+		loop (top[p], ulink, function (q)
+			if color[q] == handledcolor then color[q] = c else unhide (q) end
+		end)
+	end
+
 	local function uncover (i)
 		local l, r = llink[i], rlink[i]
 		rlink[l], llink[r] = i, i
 		loop(i, ulink, unhide)	
 	end
 
-	local function uncovertop (p) 	uncover (top[p]) end
+	local function uncommit (i, p)
+		if color[p] == nocolor then uncover (i) else unpurify (p) end
+	end
+
+	local function uncovertop (p) 	uncommit (top[p], p) end
 
 	------------------------------------------------------------------------------
 
@@ -180,7 +215,8 @@ function dl.indexed(name)
 	return function (tbl)
 		local seq = {}
 		for i, item in ipairs(tbl) do seq[i] = item end
-		return name .. '_' .. table.concat (seq, ',') end	
+		return name .. '_' .. table.concat (seq, ',')
+	end	
 end
 
 return dl

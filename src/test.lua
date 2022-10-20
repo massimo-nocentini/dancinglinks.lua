@@ -212,7 +212,7 @@ function test_sudoku ()
 		L.items[ c {j, k} ] = { isprimary = true }
 		L.items[ b {x, k} ] = { isprimary = true }
 
-		table.insert(L.options, { p {i, j}, r {i, k}, c {j, k}, b {x, k} }) 
+		table.insert(L.options, { [p {i, j}] = {}, r {i, k}, c {j, k}, b {x, k} }) 
 
 	end end end
 
