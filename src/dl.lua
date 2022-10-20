@@ -113,21 +113,28 @@ function dl.problem (P)
 	local primary_header = {}
 	local last_primary_item = primary_header	-- cursor variable for primary items.
 
-	for _, item in ipairs(P.primary) do	-- link primary items
-		ulink[item], dlink[item] = item, item	-- self loops on the vertical dimension.
+	local primarysize, secondarysize = 0, 0
+
+	for item, descriptor in pairs(P.items) do	-- link primary items
+
 		len[item] = 0
 
-		llink[item], rlink[last_primary_item] = last_primary_item, item	-- link among the horizontal dimension.
-		last_primary_item = item
+		if descriptor.isprimary then
+
+			ulink[item], dlink[item] = item, item	-- self loops on the vertical dimension.
+			llink[item], rlink[last_primary_item] = last_primary_item, item	-- link among the horizontal dimension.
+			last_primary_item = item
+			primarysize = primarysize + 1
+		else 
+			ulink[item], dlink[item] = item, item
+			llink[item], rlink[item] = item, item
+			secondarysize = secondarysize + 1
+		end
 	end
+
+	P.primarysize, P.secondarysize = primarysize, secondarysize
 
 	rlink[last_primary_item], llink[primary_header] = primary_header, last_primary_item	-- closing the doubly circular list.
-
-	for _, item in pairs(P.secondary or {}) do	-- link secondary items
-		len[item] = 0
-		ulink[item], dlink[item] = item, item
-		llink[item], rlink[item] = item, item
-	end
 
 	for iopt, opt in ipairs(P.options) do
 
@@ -163,14 +170,8 @@ end
 
 function dl.indexed(name)
 
-	local r = {base = name}
-	setmetatable(r, {
-		__index = function (t, i) 
-			if type(i) == 'table' then i = table.concat(i, ',') end
-			return t.base..'_'..tostring(i) 
-		end
-	})
-	return r
+	return function (tbl)
+		return name .. '_' .. table.concat (tbl, ',') end	
 end
 
 return dl
