@@ -60,25 +60,19 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 
 	local function nextitem_minlen () 
 
-		local pool, postponed = {}, {}
-		local max = math.huge
+		local max, items, optionssize, pool = math.huge, P.items, #P.options, {}
 
 		loop (primary_header, rlink, function (each) 
 			local m = len[each] 
 			assert (m > -1)
 
-			if false and (not P.items[each].issharp) and m < 2 then 
-				table.insert(postponed, each)
-			else 
-				if m == max then table.insert (pool, each) 
-				elseif m < max then max, pool = m, {each} end
-			end
+			--if (not items[each].issharp) and m < 2 then m = m + optionssize end 
+
+			if m == max then table.insert (pool, each) 
+			elseif m < max then max, pool = m, {each} end
 		end)
 
-		--[[
-		if #pool == 0 then pool = postponed end
-		if #pool == 0 then print 'error' end
-		]]
+		assert (#pool > 0)
 
 		return pool[math.random(#pool)]
 			
