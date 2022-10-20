@@ -69,7 +69,7 @@ function dl.solver (llink, rlink, ulink, dlink, len, top, option, primary_header
 			--if (not items[each].issharp) and m < 2 then m = m + optionssize end 
 
 			if m == max then table.insert (pool, each) 
-			elseif m < max then max, pool = m, {each} end
+			elseif m < max then max, pool = m, { each } end
 		end)
 
 		assert (#pool > 0)

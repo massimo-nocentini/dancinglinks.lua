@@ -206,10 +206,10 @@ function test_sudoku ()
 
 	local p, r, c, b = ec.indexed('p'), ec.indexed('r'), ec.indexed('c'), ec.indexed('b')
 
-	local L = { items = {}, options = {}, }	-- our problem
+	local L = { items = {}, options = {} }	-- our problem
 
-	local count = 0
 	for i = 0, n - 1 do for j = 0, n - 1 do for k = 1, n do
+
 		local x = nsqrt * math.floor (i/nsqrt) + math.floor (j/nsqrt)
 
 		L.items[ p {i, j} ] = { isprimary = true }
@@ -219,7 +219,6 @@ function test_sudoku ()
 
 		table.insert(L.options, { p {i, j}, r {i, k}, c {j, k}, b {x, k} }) 
 
-		count = count + 1
 	end end end
 
 	local P = table.pack(ec.problem (L))
@@ -235,7 +234,8 @@ function test_sudoku ()
 
 	lu.assertTrue (flag)
 	lu.assertEquals (L.primarysize, 4*9*9)
-	lu.assertEquals (count, 9*9*9)
+	lu.assertEquals (L.secondarysize, 0)
+	lu.assertEquals (#L.options, 9*9*9)
 	lu.assertEquals (#selection, 9*9)
 
 end
