@@ -3,9 +3,11 @@ local dl = {}
 
 function dl.solver (P)
 
-	local nocolor, handledcolor = {}, {}	-- just witnesses.
+	local function monus (x, y) return math.max (x - y, 0) end
 
-	local llink, rlink, ulink, dlink, len, top, option, color = {}, {}, {}, {}, {}, {}, {}, {}
+	local nocolor, handledcolor, noop = {}, {}, function () end	-- just witnesses.
+
+	local llink, rlink, ulink, dlink, len, top, option, color, slack, bound, firsttweaks = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
 
 	local primary_header = {}
 	local last_primary_item = primary_header	-- cursor variable for primary items.
@@ -20,11 +22,17 @@ function dl.solver (P)
 
 			ulink[item], dlink[item] = item, item	-- self loops on the vertical dimension.
 			llink[item], rlink[last_primary_item] = last_primary_item, item	-- link among the horizontal dimension.
+
+			local u, v = descriptor.atleast or 1, descriptor.atmost or 1
+			assert (u >= 0 and v > 0 and v >= u)
+			slack[item], bound[item] = v - u, v
+
 			last_primary_item = item
 			primarysize = primarysize + 1
 		else 
 			ulink[item], dlink[item] = item, item
 			llink[item], rlink[item] = item, item
+
 			secondarysize = secondarysize + 1
 		end
 	end
@@ -85,22 +93,23 @@ function dl.solver (P)
 
 	local function nextitem_minlen () 
 
-		local max, items, optionssize, pool = math.huge, P.items, #P.options, {}
+		local function branch (each) 
+			return monus (len[each] + 1, monus (bound[each], slack[each])) end
+
+		local max, item = math.huge, nil
 
 		loop (primary_header, rlink, function (each) 
-			local m = len[each] 
-			assert (m > -1)
 
-			--if (not items[each].issharp) and m < 2 then m = m + optionssize end 
+			local lambda = branch (each)
 
-			if m == max then table.insert (pool, each) 
-			elseif m < max then max, pool = m, { each } end
+			local es = slack[each]
+			if (lambda < max)
+				or (lambda == max and ec < slack[item])
+				or (lambda == max and ec == slack[item] and len[each] > len[item])
+				then max, item = lambda, each end
 		end)
 
-		assert (#pool > 0)
-
-		return pool[math.random(#pool)]
-			
+		return item, max
 	end
 
 	-- COVERING ------------------------------------------------------------------
@@ -135,7 +144,15 @@ function dl.solver (P)
 		if color[p] == nocolor then cover (i) else purify (p) end
 	end
 
-	local function covertop (p) 	commit (top[p], p) end
+	local function covertop (p)
+		local item = top[p]
+		local b = bound[item] 
+		if b then 
+			b = b - 1
+			bound[item] = b
+			if b == 0 then cover (item) else commit (item, p) end
+		end
+	end
 
 	-- UNCOVERING ----------------------------------------------------------------
 
@@ -169,7 +186,52 @@ function dl.solver (P)
 		if color[p] == nocolor then uncover (i) else unpurify (p) end
 	end
 
-	local function uncovertop (p) 	uncommit (top[p], p) end
+	local function uncovertop (p) 
+		local item = top[p]
+		local b = bound[item] 
+		if b then 
+			b = b + 1
+			bound[item] = b
+			if b == 1 then uncover (item) else uncommit (item, p) end
+		end
+	end
+
+	-- TWEAKING ------------------------------------------------------------------
+	
+	local function tweakw (p, x)
+		local d = dlink[x]
+		dlink[p], ulink[d] = d, p
+		len[p] = len[p] - 1
+	end
+
+	local function tweak (p, x) hide (x); wtweak (p, x) end
+
+	-- UNTWEAKING ------------------------------------------------------------------
+	
+	local function untweakf (l, f)
+
+		local k = 0
+		local a = firsttweaks[l]
+		local p = top[a]
+		local x, y = a, p
+		local z = dlink[p]
+
+		dlink[p] = x
+		while x ~= z do
+			ulink[x] = y
+			k = k + 1
+			f (x)
+			y = x
+			x = dlink[x]
+		end
+		ulink[z] = y
+		len[p] = len[p] + k
+		return p
+	end
+
+	local function untweak (l) untweakf (l, unhide) end
+
+	local function untweakw (l) uncover (untweakf (l, noop)) end	-- this is the weak version.
 
 	------------------------------------------------------------------------------
 
@@ -185,25 +247,53 @@ function dl.solver (P)
 			table.sort(cpy)
 			coroutine.yield (cpy)
 		else
-			local item = nextitem_minlen ()
+			local item, branch = nextitem_minlen ()
 
-			cover (item)
+			if branch == 0 then goto M9 end
+
+			local b, s, xl = bound[item] - 1, slack[item], dlink[item]
+			bound[item] = b
+
+			if b == 0 then cover (item) end
+			if b > 0 or s > 0 then firsttweaks[l] = xl end
 
 			loop (item, dlink, function (ref) 
 
-				loop (ref, rlink, covertop)
+				local b, s = bound[item], slack[item]
 
-				R (l + 1, { 
-					level = l, 
-					index = option[ref], 
-					nextoption = opt, 
-				})
+				if b == 0 and s == 0 then
 
-				loop (ref, llink, uncovertop)
+					loop (ref, rlink, covertop)
 
+					R (l + 1, { 
+						level = l, 
+						index = option[ref], 
+						nextoption = opt, 
+					})
+
+					loop (ref, llink, uncovertop)
+				
+				elseif len[item] > b - s then 
+					if b == 0 then tweakw (item, ref) 
+					else 
+						tweak (item, ref) 
+
+						--local p, q = llink[item], rlink[item]
+						--rlink[p], llink[q] = q, p
+					end
+				end
 			end)
 
-			uncover (item)
+			if bound[item] == 0 then
+				if slack[item] == 0 then uncover (item) 
+				else untweakw (l) end
+			else untweak (l) end
+
+			bound[item] = bound[item] + 1
+
+			firsttweaks[l] = nil
+
+			::M9::
 		end
 	end
 

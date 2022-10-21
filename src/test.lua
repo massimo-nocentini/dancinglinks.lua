@@ -236,9 +236,6 @@ end
 
 function test_two_crosswords ()
 
-	local n = 9
-	local nsqrt = math.tointeger (math.sqrt (n))
-
 	local l, p = ec.indexed('l'), ec.indexed('p')
 
 	local L = { items = {}, options = {} }	-- our problem
@@ -272,12 +269,52 @@ function test_two_crosswords ()
 
 	local sol = {}
 	for i, iopt in ipairs(selection) do
-		sol[i] = L.options[iopt]	
+		sol[i] = L.options[iopt]
 		--print (table.concat (sol[i], ' '))
 	end
 	lu.assertTrue (flag)
 	lu.assertEquals (sol, {})
 
 end
+
+function test_partridge ()
+
+	local n = 8
+
+	local p, v = ec.indexed('p'), ec.indexed('v')
+
+	local L = { items = {}, options = {} }	-- our problem
+
+	for k = 1, n do for i = 0, n - k do for j = 0, n - k do
+
+		L.items[ v {k} ] = { isprimary = true, atleast = k, atmost = k }
+
+		local option = { v {k} }
+
+		for u = 0, k - 1 do for r = 0, k - 1 do
+			L.items[ p {i + u, j + r} ] = { isprimary = true }
+
+			table.insert(option, p {i + u, j + r})
+		end end
+
+		table.insert(L.options, option) 
+
+	end end end
+
+	local solver = ec.solver (L)
+
+	local flag, selection = coroutine.resume (solver)
+
+	local sol = {}
+	for i, iopt in ipairs(selection) do
+		sol[i] = L.options[iopt]	
+		--print (table.concat (sol[i], ' '))
+	end
+
+	lu.assertTrue (flag)
+	lu.assertEquals (sol, {})
+
+end
+
 
 os.exit( lu.LuaUnit.run() )
