@@ -104,8 +104,8 @@ function dl.solver (P)
 
 			local es = slack[each]
 			if (lambda < max)
-				or (lambda == max and ec < slack[item])
-				or (lambda == max and ec == slack[item] and len[each] > len[item])
+				or (lambda == max and es < slack[item])
+				or (lambda == max and es == slack[item] and len[each] > len[item])
 				then max, item = lambda, each end
 		end)
 
@@ -146,12 +146,13 @@ function dl.solver (P)
 
 	local function covertop (p)
 		local item = top[p]
+		
 		local b = bound[item] 
 		if b then 
 			b = b - 1
 			bound[item] = b
-			if b == 0 then cover (item) else commit (item, p) end
-		end
+			if b == 0 then cover (item) end 
+		else  commit (item, p) end
 	end
 
 	-- UNCOVERING ----------------------------------------------------------------
@@ -188,12 +189,13 @@ function dl.solver (P)
 
 	local function uncovertop (p) 
 		local item = top[p]
+
 		local b = bound[item] 
 		if b then 
 			b = b + 1
 			bound[item] = b
-			if b == 1 then uncover (item) else uncommit (item, p) end
-		end
+			if b == 1 then uncover (item) end
+		else uncommit (item, p) end
 	end
 
 	-- TWEAKING ------------------------------------------------------------------
@@ -204,7 +206,7 @@ function dl.solver (P)
 		len[p] = len[p] - 1
 	end
 
-	local function tweak (p, x) hide (x); wtweak (p, x) end
+	local function tweak (p, x) hide (x); tweakw (p, x) end
 
 	-- UNTWEAKING ------------------------------------------------------------------
 	
@@ -249,51 +251,52 @@ function dl.solver (P)
 		else
 			local item, branch = nextitem_minlen ()
 
-			if branch == 0 then goto M9 end
+			if branch > 0 then
 
-			local b, s, xl = bound[item] - 1, slack[item], dlink[item]
-			bound[item] = b
+				local b, s = bound[item] - 1, slack[item]
+				bound[item] = b
 
-			if b == 0 then cover (item) end
-			if b > 0 or s > 0 then firsttweaks[l] = xl end
+				if b == 0 then cover (item) end
 
-			loop (item, dlink, function (ref) 
+				loop (item, dlink, function (ref) 
+					
+					if b > 0 or s > 0 then firsttweaks[l] = ref end
 
-				local b, s = bound[item], slack[item]
+					if b == 0 and s == 0 then
 
-				if b == 0 and s == 0 then
+						loop (ref, rlink, covertop)
 
-					loop (ref, rlink, covertop)
+						R (l + 1, { 
+							level = l, 
+							index = option[ref], 
+							nextoption = opt, 
+						})
 
-					R (l + 1, { 
-						level = l, 
-						index = option[ref], 
-						nextoption = opt, 
-					})
+						loop (ref, llink, uncovertop)
 
-					loop (ref, llink, uncovertop)
-				
-				elseif len[item] > b - s then 
-					if b == 0 then tweakw (item, ref) 
-					else 
-						tweak (item, ref) 
-
-						--local p, q = llink[item], rlink[item]
-						--rlink[p], llink[q] = q, p
+						--local p, q = llink[ref], rlink[ref]
+						--rlink[p], llink[q] = ref, ref
 					end
+
+					--if len[item] > b - s then
+						--if ref ~= item then 
+							--if b == 0 then tweakw (item, ref)
+							--else tweak (item, ref) end
+						--elseif b > 0 then
+							--local p, q = llink[item], rlink[item]
+							--rlink[p], llink[q] = q, p 
+						--end
+					--end
+				end)
+
+				if b == 0 then
+					if s == 0 then uncover (item) end
+					--else untweakw (l) end
 				end
-			end)
+				--else untweak (l) end
 
-			if bound[item] == 0 then
-				if slack[item] == 0 then uncover (item) 
-				else untweakw (l) end
-			else untweak (l) end
-
-			bound[item] = bound[item] + 1
-
-			firsttweaks[l] = nil
-
-			::M9::
+				bound[item] = bound[item] + 1
+			end
 		end
 	end
 

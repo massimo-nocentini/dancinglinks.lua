@@ -301,9 +301,12 @@ function test_partridge ()
 
 	end end end
 
+	--lu.assertEquals (L.options, {})
+
 	local solver = ec.solver (L)
 
 	local flag, selection = coroutine.resume (solver)
+
 
 	local sol = {}
 	for i, iopt in ipairs(selection) do
@@ -315,6 +318,5 @@ function test_partridge ()
 	lu.assertEquals (sol, {})
 
 end
-
 
 os.exit( lu.LuaUnit.run() )
