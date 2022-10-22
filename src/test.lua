@@ -307,9 +307,8 @@ function test_partridge ()
 
 	local flag, selection = coroutine.resume (solver)
 
-
 	local sol = {}
-	for i, iopt in ipairs(selection) do
+	for i, iopt in ipairs(selection or {}) do
 		sol[i] = L.options[iopt]	
 		--print (table.concat (sol[i], ' '))
 	end
@@ -318,5 +317,7 @@ function test_partridge ()
 	lu.assertEquals (sol, {})
 
 end
+
+test_partridge()
 
 os.exit( lu.LuaUnit.run() )

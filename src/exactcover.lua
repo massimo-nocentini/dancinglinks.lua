@@ -7,7 +7,7 @@ function dl.solver (P)
 
 	local nocolor, handledcolor, noop = {}, {}, function () end	-- just witnesses.
 
-	local llink, rlink, ulink, dlink, len, top, option, color, slack, bound, firsttweaks = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
+	local llink, rlink, ulink, dlink, len, top, option, color, slack, bound  = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
 
 	local primary_header = {}
 	local last_primary_item = primary_header	-- cursor variable for primary items.
@@ -152,7 +152,7 @@ function dl.solver (P)
 			b = b - 1
 			bound[item] = b
 			if b == 0 then cover (item) end 
-		else  commit (item, p) end
+		else commit (item, p) end
 	end
 
 	-- UNCOVERING ----------------------------------------------------------------
@@ -210,10 +210,9 @@ function dl.solver (P)
 
 	-- UNTWEAKING ------------------------------------------------------------------
 	
-	local function untweakf (l, f)
+	local function untweakf (a, f)
 
 		local k = 0
-		local a = firsttweaks[l]
 		local p = top[a]
 		local x, y = a, p
 		local z = dlink[p]
@@ -231,9 +230,9 @@ function dl.solver (P)
 		return p
 	end
 
-	local function untweak (l) untweakf (l, unhide) end
+	local function untweak (a) untweakf (a, unhide) end
 
-	local function untweakw (l) uncover (untweakf (l, noop)) end	-- this is the weak version.
+	local function untweakw (a) uncover (untweakf (a, noop)) end	-- this is the weak version.
 
 	------------------------------------------------------------------------------
 
@@ -250,20 +249,19 @@ function dl.solver (P)
 			coroutine.yield (cpy)
 		else
 			local item, branch = nextitem_minlen ()
+			local s = slack[item]
+			local xl = dlink[item]
 
 			if branch > 0 then
 
-				local b, s = bound[item] - 1, slack[item]
-				bound[item] = b
+				bound[item] = bound[item] - 1
 
-				if b == 0 then cover (item) end
+				if bound[item] == 0 then cover (item) end
 
-				loop (item, dlink, function (ref) 
+				if bound[item] == 0 and s == 0 and xl ~= item then
+
+					loop (item, dlink, function (ref) 
 					
-					if b > 0 or s > 0 then firsttweaks[l] = ref end
-
-					if b == 0 and s == 0 then
-
 						loop (ref, rlink, covertop)
 
 						R (l + 1, { 
@@ -271,32 +269,30 @@ function dl.solver (P)
 							index = option[ref], 
 							nextoption = opt, 
 						})
-
+						
 						loop (ref, llink, uncovertop)
+					end)
 
-						--local p, q = llink[ref], rlink[ref]
-						--rlink[p], llink[q] = ref, ref
+				elseif len[item] > bound[item] - s then
+					if xl ~= item then
+						if bound[item] == 0 then tweakw (item, ref)
+						else tweak (item, ref) end
+					elseif bound[item] > 0 then
+						local p, q = llink[item], rlink[item]
+						rlink[p], llink[q] = q, p
 					end
-
-					--if len[item] > b - s then
-						--if ref ~= item then 
-							--if b == 0 then tweakw (item, ref)
-							--else tweak (item, ref) end
-						--elseif b > 0 then
-							--local p, q = llink[item], rlink[item]
-							--rlink[p], llink[q] = q, p 
-						--end
-					--end
-				end)
-
-				if b == 0 then
-					if s == 0 then uncover (item) end
-					--else untweakw (l) end
 				end
-				--else untweak (l) end
+
+				if bound[item] == 0 then
+					if s == 0 then uncover (item)
+					else untweakw (xl) end
+				else untweak (xl) end
 
 				bound[item] = bound[item] + 1
 			end
+
+			local p, q = llink[xl], rlink[xl]
+			rlink[p], llink[q] = xl, xl
 		end
 	end
 
