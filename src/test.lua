@@ -279,29 +279,45 @@ end
 
 function test_partridge ()
 
-	local n = 8
+	local n = 2
+	local N = n * (n + 1) / 2
 
 	local p, v = ec.indexed('p'), ec.indexed('v')
 
 	local L = { items = {}, options = {} }	-- our problem
 
-	for k = 1, n do for i = 0, n - k do for j = 0, n - k do
+	for k = 1, n do 
 
 		L.items[ v {k} ] = { isprimary = true, atleast = k, atmost = k }
 
-		local option = { v {k} }
+		for i = 0, N - k do for j = 0, N - k do
 
-		for u = 0, k - 1 do for r = 0, k - 1 do
-			L.items[ p {i + u, j + r} ] = { isprimary = true }
+			local option = { v {k} }
 
-			table.insert(option, p {i + u, j + r})
-		end end
+			for u = 0, k - 1 do for r = 0, k - 1 do
+				L.items[ p {i + u, j + r} ] = { isprimary = true }
 
-		table.insert(L.options, option) 
+				table.insert(option, p {i + u, j + r})
+			end end
+
+			table.insert(L.options, option) 
 
 	end end end
 
-	--lu.assertEquals (L.options, {})
+	lu.assertEquals (L.options, {
+		    {"v_1", "p_0,0"},
+		    {"v_1", "p_0,1"},
+		    {"v_1", "p_0,2"},
+		    {"v_1", "p_1,0"},
+		    {"v_1", "p_1,1"},
+		    {"v_1", "p_1,2"},
+		    {"v_1", "p_2,0"},
+		    {"v_1", "p_2,1"},
+		    {"v_1", "p_2,2"},
+		    {"v_2", "p_0,0", "p_0,1", "p_1,0", "p_1,1"},
+		    {"v_2", "p_0,1", "p_0,2", "p_1,1", "p_1,2"},
+		    {"v_2", "p_1,0", "p_1,1", "p_2,0", "p_2,1"},
+		    {"v_2", "p_1,1", "p_1,2", "p_2,1", "p_2,2"} })
 
 	local solver = ec.solver (L)
 

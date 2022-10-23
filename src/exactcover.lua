@@ -270,13 +270,16 @@ function dl.solver (P)
 							nextoption = opt, 
 						})
 						
+						--local p, q = llink[ref], rlink[ref]
+						--rlink[p], llink[q] = ref, ref
+
 						loop (ref, llink, uncovertop)
 					end)
 
 				elseif len[item] > bound[item] - s then
 					if xl ~= item then
-						if bound[item] == 0 then tweakw (item, ref)
-						else tweak (item, ref) end
+						if bound[item] == 0 then tweakw (item, xl)
+						else tweak (item, xl) end
 					elseif bound[item] > 0 then
 						local p, q = llink[item], rlink[item]
 						rlink[p], llink[q] = q, p
@@ -291,8 +294,6 @@ function dl.solver (P)
 				bound[item] = bound[item] + 1
 			end
 
-			local p, q = llink[xl], rlink[xl]
-			rlink[p], llink[q] = xl, xl
 		end
 	end
 
