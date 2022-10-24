@@ -301,8 +301,8 @@ function test_partridge ()
 			end end
 
 			table.insert(L.options, option) 
-
-	end end end
+		end end 
+	end
 
 	lu.assertEquals (L.options, {
 		    {"v_1", "p_0,0"},
@@ -333,7 +333,5 @@ function test_partridge ()
 	lu.assertEquals (sol, {})
 
 end
-
-test_partridge()
 
 os.exit( lu.LuaUnit.run() )

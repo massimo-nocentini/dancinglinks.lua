@@ -249,18 +249,21 @@ function dl.solver (P)
 			coroutine.yield (cpy)
 		else
 			local item, branch = nextitem_minlen ()
-			local s = slack[item]
-			local xl = dlink[item]
 
 			if branch > 0 then
 
+				local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
+				local xl = dlink[item]
+				local ft = nil
+
 				bound[item] = bound[item] - 1
 
-				if bound[item] == 0 then cover (item) end
+				if bound[item] == 0 then cover (item)
+				elseif s > 0 then ft = xl end
 
-				if bound[item] == 0 and s == 0 and xl ~= item then
+				if bound[item] == 0 and s == 0 then
 
-					loop (item, dlink, function (ref) 
+					loop (item, dlink, function (ref)
 					
 						loop (ref, rlink, covertop)
 
@@ -270,26 +273,24 @@ function dl.solver (P)
 							nextoption = opt, 
 						})
 						
-						--local p, q = llink[ref], rlink[ref]
-						--rlink[p], llink[q] = ref, ref
-
 						loop (ref, llink, uncovertop)
 					end)
 
-				elseif len[item] > bound[item] - s then
-					if xl ~= item then
-						if bound[item] == 0 then tweakw (item, xl)
-						else tweak (item, xl) end
-					elseif bound[item] > 0 then
-						local p, q = llink[item], rlink[item]
-						rlink[p], llink[q] = q, p
-					end
+				elseif len[item] <= bound[item] - s then goto M8
+				elseif xl ~= item then if bound[item] == 0 then tweakw (item, xl) else tweak (item, xl) end
+				elseif bound[item] > 0 then
+					local p, q = llink[item], rlink[item]
+					rlink[p], llink[q] = q, p
 				end
 
-				if bound[item] == 0 then
-					if s == 0 then uncover (item)
-					else untweakw (xl) end
-				else untweak (xl) end
+				::M8::
+				if xl == item then
+					local p, q = llink[xl], rlink[xl]
+					rlink[p], llink[q] = xl, xl
+				end
+
+				if bound[item] == 0 then if s == 0 then uncover (item) else untweakw (ft) end
+				else untweak (ft) end
 
 				bound[item] = bound[item] + 1
 			end
