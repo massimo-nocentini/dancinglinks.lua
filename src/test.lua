@@ -345,7 +345,7 @@ function test_partridge_options_n_equals_2 ()
 
 end
 
-function est_partridge ()
+function test_partridge ()
 
 	local n = 8
 	local N = n * (n + 1) / 2
@@ -371,23 +371,6 @@ function est_partridge ()
 			table.insert(L.options, option) 
 		end end 
 	end
-
-	--[[
-	lu.assertEquals (L.options, {
-		    {"v_1", "p_0,0"},
-		    {"v_1", "p_0,1"},
-		    {"v_1", "p_0,2"},
-		    {"v_1", "p_1,0"},
-		    {"v_1", "p_1,1"},
-		    {"v_1", "p_1,2"},
-		    {"v_1", "p_2,0"},
-		    {"v_1", "p_2,1"},
-		    {"v_1", "p_2,2"},
-		    {"v_2", "p_0,0", "p_0,1", "p_1,0", "p_1,1"},
-		    {"v_2", "p_0,1", "p_0,2", "p_1,1", "p_1,2"},
-		    {"v_2", "p_1,0", "p_1,1", "p_2,0", "p_2,1"},
-		    {"v_2", "p_1,1", "p_1,2", "p_2,1", "p_2,2"} })
-		    ]]
 
 	local solver = ec.solver (L)
 

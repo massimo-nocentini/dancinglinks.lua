@@ -278,48 +278,49 @@ function dl.solver (P)
 				local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
 				local ft		-- which stands for `First Tweaks`.
 
-				bound[item] = bound[item] - 1
-				if bound[item] == 0 then cover (item) end
-				--if bound[item] > 0 or s > 0 then ft = dlink[item] end
+				local b = bound[item] - 1
+				bound[item] = b
+				if b == 0 then cover (item) end
+				if b > 0 or s > 0 then ft = dlink[item] end
 
 				loop (item, dlink, function (ref)
 
 					local restore_item = false
 
-					--if bound[item] == 0 and s == 0 then goto M6 end
-					--[[if len[item] <= bound[item] - s then return false end
-					if bound[item] == 0 then tweakw (item, ref) else tweak (item, ref) end
+					if b == 0 and s == 0 then goto M6 end
 
-					if bound[item] > 0 then 
+					if len[item] + s <= b then return false end	-- stop the current loop.
+
+					if b == 0 then tweakw (item, ref) else tweak (item, ref) end
+
+					if b > 0 then 
 						disconnecth (item)
 						restore_item = true
 					end
 
-					]]
 					::M6::
 					loop (ref, rlink, covertop)
 
 					R (l + 1, { 
-						level = l, 
-						index = option[ref], 
-						nextoption = opt, 
+						level = l,
+						index = option[ref],
+						nextoption = opt,
 					})
 				
 					loop (ref, llink, uncovertop)
 
+					if restore_item then connecth (item) end
+
 				end)
 				
-				--connecth (item)  
+				if b == 0 and s == 0 then uncover (item) end
+				if ft then untweakw (ft) else untweak (ft) end
 
-				if bound[item] == 0 and s == 0 then uncover (item) end
-				--if bound[item] == 0 then untweakw (ft) else untweak (ft) end
-
-				bound[item] = bound[item] + 1
+				bound[item] = b + 1
 
 			elseif item ~= primary_header then
 				--print (item)
 			end
-
 		end
 	end
 
