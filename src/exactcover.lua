@@ -1,11 +1,21 @@
 
 local dl = {}
 
+local function disconnect (q, rel, irel) 
+	local u, d = rel[q], irel[q]
+	rel[d], irel[u] = u, d
+end
+
+local function connect (q, rel, irel) 
+	local u, d = rel[q], irel[q]
+	irel[u], rel[d] = q, q
+end
+
+local function monus (x, y) return math.max (x - y, 0) end
+
+local nocolor, handledcolor, noop = {}, {}, function () end	-- just witnesses.
+
 function dl.solver (P)
-
-	local function monus (x, y) return math.max (x - y, 0) end
-
-	local nocolor, handledcolor, noop = {}, {}, function () end	-- just witnesses.
 
 	local llink, rlink, ulink, dlink, len, top, option, color, slack, bound  = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
 
@@ -84,7 +94,11 @@ function dl.solver (P)
 			repeat f (each); each = toward[each] until each == start
 		else
 			local each = toward[start]
-			while each ~= start do f (each); each = toward[each] end
+			while each ~= start do 
+				local continue = f (each)
+				if continue ~= nil and not continue then break end
+				each = toward[each] 
+			end
 		end
 	end
 
@@ -93,8 +107,7 @@ function dl.solver (P)
 
 	local function nextitem_minlen () 
 
-		local function branch (each) 
-			return monus (len[each] + 1, monus (bound[each], slack[each])) end
+		local function branch (each) return monus (len[each] + 1, monus (bound[each], slack[each])) end
 
 		local max, item = math.huge, nil
 
@@ -112,23 +125,28 @@ function dl.solver (P)
 		return item, max
 	end
 
+	local function connectv (q) return connect (q, ulink, dlink) end
+	local function disconnectv (q) return disconnect (q, ulink, dlink) end
+
+	local function connecth (q) return connect (q, llink, rlink) end
+	local function disconnecth (q) return disconnect (q, llink, rlink) end
+
 	-- COVERING ------------------------------------------------------------------
 
 	local function H (q)
 
-		if q == handledcolor then return end
+		if color[q] ~= handledcolor then 
 
-		local x, u, d = top[q], ulink[q], dlink[q]
-		dlink[u], ulink[d] = d, u
-		len[x] = len[x] - 1
+			disconnectv (q)
+
+			local x = top[q]
+			len[x] = len[x] - 1 
+		end
 	end
 
 	local function hide (p) loop(p, rlink, H) end
 
-	local function purify (p)
-
-		local c = color[p]
-		
+	local function purify (p, c)
 		loop (top[p], dlink, function (q)
 			if color[q] == c then color[q] = handledcolor else hide (q) end
 		end)
@@ -136,17 +154,16 @@ function dl.solver (P)
 
 	local function cover (i)
 		loop(i, dlink, hide)
-		local l, r = llink[i], rlink[i]
-		rlink[l], llink[r] = r, l
+		disconnecth (i)
 	end
 
 	local function commit (i, p)
-		if color[p] == nocolor then cover (i) else purify (p) end
+		local c = color[p]
+		if c == nocolor then cover (i) elseif c ~= handledcolor then purify (p, c) end
 	end
 
 	local function covertop (p)
 		local item = top[p]
-		
 		local b = bound[item] 
 		if b then 
 			b = b - 1
@@ -159,37 +176,36 @@ function dl.solver (P)
 
 	local function U (q)
 
-		if q == handledcolor then return end
+		if color[q] ~= handledcolor then 
 
-		local x, u, d = top[q], ulink[q], dlink[q]
-		dlink[u], ulink[d] = q, q
-		len[x] = len[x] + 1
+			connectv (q)
+
+			local x = top[q]
+			len[x] = len[x] + 1
+		end
 	end
 
 	local function unhide (p) loop(p, llink, U) end
 
-	local function unpurify (p)
+	local function unpurify (p, c)
 
-		local c = color[p]
-		
 		loop (top[p], ulink, function (q)
-			if color[q] == handledcolor then color[q] = c else unhide (q) end
-		end)
+			if color[q] == handledcolor then color[q] = c else unhide (q) end end)
 	end
 
 	local function uncover (i)
-		local l, r = llink[i], rlink[i]
-		rlink[l], llink[r] = i, i
+
+		connecth (i)
 		loop(i, ulink, unhide)	
 	end
 
 	local function uncommit (i, p)
-		if color[p] == nocolor then uncover (i) else unpurify (p) end
+		local c = color[p]
+		if c == nocolor then uncover (i) elseif c ~= handledcolor then unpurify (p, c) end
 	end
 
 	local function uncovertop (p) 
 		local item = top[p]
-
 		local b = bound[item] 
 		if b then 
 			b = b + 1
@@ -201,23 +217,30 @@ function dl.solver (P)
 	-- TWEAKING ------------------------------------------------------------------
 	
 	local function tweakw (p, x)
+		assert (x == dlink[p] and p == ulink[x])
 		local d = dlink[x]
 		dlink[p], ulink[d] = d, p
 		len[p] = len[p] - 1
 	end
 
-	local function tweak (p, x) hide (x); tweakw (p, x) end
+	local function tweak (p, x)
+		hide (x)
+		tweakw (p, x) 
+	end
 
 	-- UNTWEAKING ------------------------------------------------------------------
 	
 	local function untweakf (a, f)
 
 		local k = 0
-		local p = top[a]
+
+		local p
+		if bound[a] then p = a else p = top[a] end
 		local x, y = a, p
 		local z = dlink[p]
 
 		dlink[p] = x
+
 		while x ~= z do
 			ulink[x] = y
 			k = k + 1
@@ -225,14 +248,14 @@ function dl.solver (P)
 			y = x
 			x = dlink[x]
 		end
+
 		ulink[z] = y
 		len[p] = len[p] + k
 		return p
 	end
 
 	local function untweak (a) untweakf (a, unhide) end
-
-	local function untweakw (a) uncover (untweakf (a, noop)) end	-- this is the weak version.
+	local function untweakw (a) uncover (untweakf (a, noop)) end
 
 	------------------------------------------------------------------------------
 
@@ -253,46 +276,48 @@ function dl.solver (P)
 			if branch > 0 then
 
 				local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
-				local xl = dlink[item]
-				local ft = nil
+				local ft		-- which stands for `First Tweaks`.
 
 				bound[item] = bound[item] - 1
+				if bound[item] == 0 then cover (item) end
+				--if bound[item] > 0 or s > 0 then ft = dlink[item] end
 
-				if bound[item] == 0 then cover (item)
-				elseif s > 0 then ft = xl end
+				loop (item, dlink, function (ref)
 
-				if bound[item] == 0 and s == 0 then
+					local restore_item = false
 
-					loop (item, dlink, function (ref)
-					
-						loop (ref, rlink, covertop)
+					--if bound[item] == 0 and s == 0 then goto M6 end
+					--[[if len[item] <= bound[item] - s then return false end
+					if bound[item] == 0 then tweakw (item, ref) else tweak (item, ref) end
 
-						R (l + 1, { 
-							level = l, 
-							index = option[ref], 
-							nextoption = opt, 
-						})
-						
-						loop (ref, llink, uncovertop)
-					end)
+					if bound[item] > 0 then 
+						disconnecth (item)
+						restore_item = true
+					end
 
-				elseif len[item] <= bound[item] - s then goto M8
-				elseif xl ~= item then if bound[item] == 0 then tweakw (item, xl) else tweak (item, xl) end
-				elseif bound[item] > 0 then
-					local p, q = llink[item], rlink[item]
-					rlink[p], llink[q] = q, p
-				end
+					]]
+					::M6::
+					loop (ref, rlink, covertop)
 
-				::M8::
-				if xl == item then
-					local p, q = llink[xl], rlink[xl]
-					rlink[p], llink[q] = xl, xl
-				end
+					R (l + 1, { 
+						level = l, 
+						index = option[ref], 
+						nextoption = opt, 
+					})
+				
+					loop (ref, llink, uncovertop)
 
-				if bound[item] == 0 then if s == 0 then uncover (item) else untweakw (ft) end
-				else untweak (ft) end
+				end)
+				
+				--connecth (item)  
+
+				if bound[item] == 0 and s == 0 then uncover (item) end
+				--if bound[item] == 0 then untweakw (ft) else untweak (ft) end
 
 				bound[item] = bound[item] + 1
+
+			elseif item ~= primary_header then
+				--print (item)
 			end
 
 		end
