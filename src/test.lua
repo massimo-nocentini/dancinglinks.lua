@@ -273,7 +273,24 @@ function test_two_crosswords ()
 		--print (table.concat (sol[i], ' '))
 	end
 	lu.assertTrue (flag)
-	lu.assertEquals (sol, {})
+	lu.assertEquals (sol, 
+	{
+	    {
+		"l_utah",
+		["p_1,4"]={color=117},
+		["p_2,4"]={color=116},
+		["p_3,4"]={color=97},
+		["p_4,4"]={color=104}
+	    },
+	    {
+		"l_knuth",
+		["p_2,1"]={color=107},
+		["p_2,2"]={color=110},
+		["p_2,3"]={color=117},
+		["p_2,4"]={color=116},
+		["p_2,5"]={color=104}
+	    }
+	})
 
 end
 
