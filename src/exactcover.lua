@@ -95,7 +95,7 @@ function dl.solver (P)
 			local each = toward[start]
 			while each ~= start do 
 				local continue = f (each)
-				if continue ~= nil and not continue then print 'broken'; break end
+				if continue ~= nil and not continue then break end
 				each = toward[each] 
 			end
 		end
@@ -281,6 +281,7 @@ function dl.solver (P)
 
 			if branch > 0 then
 				
+				local dountweak = false
 				local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
 				local ft = dlink[item]	-- which stands for `First Tweaks`.
 
@@ -290,14 +291,10 @@ function dl.solver (P)
 
 				loop (item, dlink, function (ref)
 
-					local restore_item = false
+				 	if len[item] + s <= bound[item] then return false end	-- stop the current loop.
 
-					if bound[item] == 0 and s == 0 then goto M6
-					-- bound[item] > 0 or s > 0
-					elseif len[item] + s <= bound[item] then return false 	-- stop the current loop.
-					else tweak (item, ref) end
+					if bound[item] > 0 or s > 0 then tweak (item, ref); dountweak = true end
 
-					::M6::
 					loop (ref, rlink, covertop)
 
 					R (l + 1, { 
@@ -308,20 +305,27 @@ function dl.solver (P)
 				
 					loop (ref, llink, uncovertop)
 
+					::continue::
 				end)
 
 				if bound[item] > 0 then 
 					disconnecth (item)
-					R (l + 1, opt) 
+					--[[
+					R (l + 1, { 
+						level = l,
+						index = opt.index,
+						nextoption = opt,
+					})
+					]]
+					R (l, opt)
 					connecth (item)
 				end
 				
-				if bound[item] == 0 and s == 0 then uncover (item) else untweak (item, ft) end
+				if dountweak then untweak (item, ft) end
+				if bound[item] == 0 and s == 0 then uncover (item) end
 
 				bound[item] = bound[item] + 1
 
-			elseif item ~= primary_header then
-				--print (item)
 			end
 		end
 	end

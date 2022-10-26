@@ -345,7 +345,7 @@ function test_partridge_options_n_equals_2 ()
 
 end
 
-function test_partridge ()
+function est_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -391,6 +391,40 @@ function test_partridge ()
 	lu.assertTrue (flag)
 	lu.assertEquals (sol, {})
 
+end
+
+function test_mcc_simple ()
+
+	local v = ec.indexed('v')
+
+	local L = { items = {}, options = {} }
+
+	L.items[ v {'a'} ] = { isprimary = true } 
+	L.items[ v {'b'} ] = { isprimary = true } 
+	L.items[ v {'c'} ] = { isprimary = true, atleast = 2, atmost = 3 } 
+	L.items[ v {'x'} ] = { isprimary = false } 
+	L.items[ v {'y'} ] = { isprimary = false } 
+
+	L.options = {
+		{v {'c'},          [v {'y'}] = {color = 1}},
+		{v {'a'}, v {'b'}, [v {'x'}] = {color = 0}, [v {'y'}] = {color = 0}},
+		{v {'a'}, v {'c'}, [v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
+		{v {'c'}, 	   [v {'x'}] = {color = 0}},
+		{v {'b'},          [v {'x'}] = {color = 1}},
+	}
+
+	local solver = ec.solver (L)
+
+	local flag, selection = coroutine.resume (solver)
+	
+	local sol = {}
+	for i, iopt in ipairs(selection or {}) do
+		sol[i] = L.options[iopt]	
+		--print (table.concat (sol[i], ' '))
+	end
+
+	lu.assertTrue (flag)
+	lu.assertEquals (sol, {{"v_a", "v_c", v_x={color=1}, v_y={color=1}}, {"v_b", v_x={color=1}}, {"v_c", v_y={color=1}}})
 end
 
 os.exit( lu.LuaUnit.run() )
