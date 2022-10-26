@@ -84,8 +84,7 @@ function dl.solver (P)
 
 	-- HELPERS  ------------------------------------------------------------------
 
-	local function iscovered ()
-		return rlink[primary_header] == primary_header end
+	local function iscovered () return rlink[primary_header] == primary_header end
 		
 	local function loop (start, toward, f, inclusive)
 
@@ -96,7 +95,7 @@ function dl.solver (P)
 			local each = toward[start]
 			while each ~= start do 
 				local continue = f (each)
-				if continue ~= nil and not continue then break end
+				if continue ~= nil and not continue then print 'broken'; break end
 				each = toward[each] 
 			end
 		end
@@ -109,20 +108,22 @@ function dl.solver (P)
 
 		local function branch (each) return monus (len[each] + 1, monus (bound[each], slack[each])) end
 
-		local max, item = math.huge, nil
+		local min, item = math.huge, nil
 
 		loop (primary_header, rlink, function (each) 
 
 			local lambda = branch (each)
 
 			local es = slack[each]
-			if (lambda < max)
-				or (lambda == max and es < slack[item])
-				or (lambda == max and es == slack[item] and len[each] > len[item])
-				then max, item = lambda, each end
+			if (lambda < min) or 
+			   (lambda == min and es < slack[item]) or 
+			   (lambda == min and es == slack[item] and len[each] > len[item])
+				then min, item = lambda, each end
 		end)
 
-		return item, max
+		assert (item)	-- ensure we've found something.
+
+		return item, min
 	end
 
 	local function connectv (q) return connect (q, ulink, dlink) end
@@ -223,9 +224,13 @@ function dl.solver (P)
 		len[p] = len[p] - 1
 	end
 
-	local function tweak (p, x)
+	local function tweakh (p, x)
 		hide (x)
 		tweakw (p, x) 
+	end
+
+	local function tweak (p, x)
+		if bound[p] == 0 then tweakw (p, x) else tweakh (p, x) end
 	end
 
 	-- UNTWEAKING ------------------------------------------------------------------
@@ -254,8 +259,9 @@ function dl.solver (P)
 		return p
 	end
 
-	local function untweak (a) untweakf (a, unhide) end
+	local function untweakh (a) untweakf (a, unhide) end
 	local function untweakw (a) uncover (untweakf (a, noop)) end
+	local function untweak (item, a) if bound[item] == 0 then untweakw (a) else untweakh (a) end end
 
 	------------------------------------------------------------------------------
 
@@ -274,29 +280,22 @@ function dl.solver (P)
 			local item, branch = nextitem_minlen ()
 
 			if branch > 0 then
-
+				
 				local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
-				local ft		-- which stands for `First Tweaks`.
+				local ft = dlink[item]	-- which stands for `First Tweaks`.
 
-				local b = bound[item] - 1
-				bound[item] = b
-				if b == 0 then cover (item) end
-				if b > 0 or s > 0 then ft = dlink[item] end
+				bound[item] = bound[item] - 1
+
+				if bound[item] == 0 then cover (item) end
 
 				loop (item, dlink, function (ref)
 
 					local restore_item = false
 
-					if b == 0 and s == 0 then goto M6 end
-
-					if len[item] + s <= b then return false end	-- stop the current loop.
-
-					if b == 0 then tweakw (item, ref) else tweak (item, ref) end
-
-					if b > 0 then 
-						disconnecth (item)
-						restore_item = true
-					end
+					if bound[item] == 0 and s == 0 then goto M6
+					-- bound[item] > 0 or s > 0
+					elseif len[item] + s <= bound[item] then return false 	-- stop the current loop.
+					else tweak (item, ref) end
 
 					::M6::
 					loop (ref, rlink, covertop)
@@ -309,14 +308,17 @@ function dl.solver (P)
 				
 					loop (ref, llink, uncovertop)
 
-					if restore_item then connecth (item) end
-
 				end)
-				
-				if b == 0 and s == 0 then uncover (item) end
-				if ft then untweakw (ft) else untweak (ft) end
 
-				bound[item] = b + 1
+				if bound[item] > 0 then 
+					disconnecth (item)
+					R (l + 1, opt) 
+					connecth (item)
+				end
+				
+				if bound[item] == 0 and s == 0 then uncover (item) else untweak (item, ft) end
+
+				bound[item] = bound[item] + 1
 
 			elseif item ~= primary_header then
 				--print (item)

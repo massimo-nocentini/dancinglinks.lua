@@ -348,7 +348,7 @@ end
 function test_partridge ()
 
 	local n = 8
-	local N = n * (n + 1) / 2
+	local N = math.tointeger(n * (n + 1) / 2)
 
 	local p, v = ec.indexed('p'), ec.indexed('v')
 
@@ -374,6 +374,12 @@ function test_partridge ()
 
 	local solver = ec.solver (L)
 
+	lu.assertEquals (N, 36)
+	lu.assertEquals (L.primarysize, N*N + n)
+	lu.assertEquals (L.secondarysize, 0)
+	lu.assertEquals (#L.options, 8492)
+
+	print 'first resume'
 	local flag, selection = coroutine.resume (solver)
 
 	local sol = {}
