@@ -291,7 +291,7 @@ function dl.solver (P)
 
 				loop (item, dlink, function (ref)
 
-					if bound[item] == 0 or s == 0 then goto M6
+					if bound[item] == 0 and s == 0 then goto M6
 					elseif len[item] + s <= bound[item] then interrupted = true; return false 
 					else tweak (item, ref) end	-- stop the current loop.
 
