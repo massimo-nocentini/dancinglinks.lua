@@ -424,7 +424,12 @@ function test_mcc_simple ()
 	end
 
 	lu.assertTrue (flag)
-	lu.assertEquals (sol, {{"v_a", "v_c", v_x={color=1}, v_y={color=1}}, {"v_b", v_x={color=1}}, {"v_c", v_y={color=1}}})
+	lu.assertItemsEquals (sol, {{"v_a", "v_c", v_x={color=1}, v_y={color=1}}, {"v_b", v_x={color=1}}, {"v_c", v_y={color=1}}})
+
+	-- no more solutions.
+	flag, selection = coroutine.resume (solver)
+	lu.assertTrue (flag)
+	lu.assertNil (selection)
 end
 
 os.exit( lu.LuaUnit.run() )

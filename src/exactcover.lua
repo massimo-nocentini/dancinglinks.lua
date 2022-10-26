@@ -281,7 +281,7 @@ function dl.solver (P)
 
 			if branch > 0 then
 				
-				local dountweak = false
+				local interrupted = false
 				local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
 				local ft = dlink[item]	-- which stands for `First Tweaks`.
 
@@ -291,41 +291,41 @@ function dl.solver (P)
 
 				loop (item, dlink, function (ref)
 
-				 	if len[item] + s <= bound[item] then return false end	-- stop the current loop.
+					if bound[item] == 0 or s == 0 then goto M6
+					elseif len[item] + s <= bound[item] then interrupted = true; return false 
+					else tweak (item, ref) end	-- stop the current loop.
 
-					if bound[item] > 0 or s > 0 then tweak (item, ref); dountweak = true end
+					::M6::
 
 					loop (ref, rlink, covertop)
 
 					R (l + 1, { 
 						level = l,
+						point = ref,
 						index = option[ref],
 						nextoption = opt,
 					})
-				
-					loop (ref, llink, uncovertop)
 
-					::continue::
+					loop (ref, llink, uncovertop)
 				end)
 
-				if bound[item] > 0 then 
+				if (not interrupted) and (bound[item] > 0 or s > 0) then 
 					disconnecth (item)
 					--[[
 					R (l + 1, { 
 						level = l,
-						index = opt.index,
+						ref = item,
+						index = option[2],
 						nextoption = opt,
 					})
-					]]
+					--]]
 					R (l, opt)
 					connecth (item)
 				end
 				
-				if dountweak then untweak (item, ft) end
-				if bound[item] == 0 and s == 0 then uncover (item) end
+				if bound[item] == 0 and s == 0 then uncover (item) else untweak (item, ft) end
 
 				bound[item] = bound[item] + 1
-
 			end
 		end
 	end
