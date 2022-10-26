@@ -363,8 +363,9 @@ function est_partridge ()
 			local option = { v {k} }
 
 			for u = 0, k - 1 do for r = 0, k - 1 do
-				L.items[ p {i + u, j + r} ] = { isprimary = true }
+				L.items[ p {i + u, j + r} ] = { isprimary = true, atleast = 1, atmost = 1 }
 
+				--option[p {i + u, j + r}] = {color = 1}
 				table.insert(option, p {i + u, j + r})
 			end end
 
@@ -389,7 +390,7 @@ function est_partridge ()
 	end
 
 	lu.assertTrue (flag)
-	lu.assertEquals (sol, {})
+	lu.assertItemsEquals (sol, {})
 
 end
 

@@ -114,9 +114,10 @@ function dl.solver (P)
 			local lambda = branch (each)
 
 			local es = slack[each]
-			if (lambda < min) or 
-			   (lambda == min and es < slack[item]) or 
-			   (lambda == min and es == slack[item] and len[each] > len[item])
+
+			if (lambda < min) 
+			   or (lambda == min and es < slack[item]) 
+			   or (lambda == min and es == slack[item] and len[each] > len[item])
 				then min, item = lambda, each end
 		end)
 
@@ -255,6 +256,7 @@ function dl.solver (P)
 
 		ulink[z] = y
 		len[p] = len[p] + k
+
 		return p
 	end
 
@@ -287,19 +289,16 @@ function dl.solver (P)
 
 				if bound[item] == 0 then cover (item) end
 
-				--local interrupted = loop (item, dlink, function (ref)
-				local ref, reconnect = dlink[item], false
+				local ref = dlink[item]
 				
 				::M5::
-				if bound[item] == 0 and s == 0 then if ref ~= item then goto M6 else goto M8 end
-				elseif len[item] + s <= bound[item] then goto M8
-				elseif ref ~= item then tweak (item, ref) 
-				elseif bound[item] > 0 then disconnecth (item); reconnect = true end
-				--else print(item) end
+					if bound[item] == 0 and s == 0 then if ref ~= item then goto M6 else goto M8 end
+					elseif (len[item] + s) <= bound[item] then goto M8
+					elseif ref ~= item then tweak (item, ref) 
+					elseif bound[item] > 0 or s > 0 then goto M7
+					else error (item) end
 
 				::M6::
-				if ref ~= item then 
-
 					loop (ref, rlink, covertop) 
 
 					R (l + 1, { 
@@ -314,36 +313,15 @@ function dl.solver (P)
 					ref = dlink[ref]
 
 					goto M5
-				else
+
+				::M7::
+					disconnecth (item)
 					R (l, opt)
 					connecth (item)
-				end
-
-				--[[
-				::M6::
-				if ref ~= item then loop (ref, rlink, covertop) end
-
-				R (l + 1, { 
-					level = l,
-					point = ref,
-					index = option[ref],
-					nextoption = opt,
-				})
-
-				if reconnect then connecth (item) 
-				else 
-					loop (ref, llink, uncovertop)
-					ref = dlink[ref]
-					goto M5
-				end
-				]]
-
-				--end)
 				
 				::M8::
-				if bound[item] == 0 and s == 0 then uncover (item) else untweak (item, ft) end
-
-				bound[item] = bound[item] + 1
+					if bound[item] == 0 and s == 0 then uncover (item) else untweak (item, ft) end
+					bound[item] = bound[item] + 1
 			end
 		end
 	end
