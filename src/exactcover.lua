@@ -94,9 +94,8 @@ function dl.solver (P)
 		else
 			local each = toward[start]
 			while each ~= start do 
-				local continue = f (each)
-				if continue ~= nil and not continue then break end
-				each = toward[each] 
+				local v = f (each)
+				if v then return v else each = toward[each] end
 			end
 		end
 	end
@@ -281,7 +280,6 @@ function dl.solver (P)
 
 			if branch > 0 then
 				
-				local interrupted = false
 				local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
 				local ft = dlink[item]	-- which stands for `First Tweaks`.
 
@@ -289,15 +287,20 @@ function dl.solver (P)
 
 				if bound[item] == 0 then cover (item) end
 
-				loop (item, dlink, function (ref)
+				--local interrupted = loop (item, dlink, function (ref)
+				local ref, reconnect = dlink[item], false
+				
+				::M5::
+				if bound[item] == 0 and s == 0 then if ref ~= item then goto M6 else goto M8 end
+				elseif len[item] + s <= bound[item] then goto M8
+				elseif ref ~= item then tweak (item, ref) 
+				elseif bound[item] > 0 then disconnecth (item); reconnect = true end
+				--else print(item) end
 
-					if bound[item] == 0 and s == 0 then goto M6
-					elseif len[item] + s <= bound[item] then interrupted = true; return false 
-					else tweak (item, ref) end	-- stop the current loop.
+				::M6::
+				if ref ~= item then 
 
-					::M6::
-
-					loop (ref, rlink, covertop)
+					loop (ref, rlink, covertop) 
 
 					R (l + 1, { 
 						level = l,
@@ -307,22 +310,37 @@ function dl.solver (P)
 					})
 
 					loop (ref, llink, uncovertop)
-				end)
 
-				if (not interrupted) and (bound[item] > 0 or s > 0) then 
-					disconnecth (item)
-					--[[
-					R (l + 1, { 
-						level = l,
-						ref = item,
-						index = option[2],
-						nextoption = opt,
-					})
-					--]]
+					ref = dlink[ref]
+
+					goto M5
+				else
 					R (l, opt)
 					connecth (item)
 				end
+
+				--[[
+				::M6::
+				if ref ~= item then loop (ref, rlink, covertop) end
+
+				R (l + 1, { 
+					level = l,
+					point = ref,
+					index = option[ref],
+					nextoption = opt,
+				})
+
+				if reconnect then connecth (item) 
+				else 
+					loop (ref, llink, uncovertop)
+					ref = dlink[ref]
+					goto M5
+				end
+				]]
+
+				--end)
 				
+				::M8::
 				if bound[item] == 0 and s == 0 then uncover (item) else untweak (item, ft) end
 
 				bound[item] = bound[item] + 1
