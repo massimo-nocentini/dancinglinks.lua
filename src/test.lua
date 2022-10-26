@@ -345,7 +345,7 @@ function test_partridge_options_n_equals_2 ()
 
 end
 
-function est_partridge ()
+function test_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)

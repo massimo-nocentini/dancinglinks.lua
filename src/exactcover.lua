@@ -294,7 +294,7 @@ function dl.solver (P)
 				::M5::
 					if bound[item] == 0 and s == 0 then if ref ~= item then goto M6 else goto M8 end
 					elseif (len[item] + s) <= bound[item] then goto M8
-					elseif ref ~= item then tweak (item, ref) 
+					elseif ref ~= item then tweak (item, ref); goto M6
 					elseif bound[item] > 0 or s > 0 then goto M7
 					else error (item) end
 
