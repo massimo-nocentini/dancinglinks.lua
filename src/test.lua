@@ -336,7 +336,7 @@ function test_partridge_options_n_equals_2 ()
 		    {"v_2", "p_1,0", "p_1,1", "p_2,0", "p_2,1"},
 		    {"v_2", "p_1,1", "p_1,2", "p_2,1", "p_2,2"} })
 
-	local solver = ec.solver (L)
+	local _, solver = ec.solver (L)
 
 	local flag, selection = coroutine.resume (solver)
 
@@ -345,7 +345,7 @@ function test_partridge_options_n_equals_2 ()
 
 end
 
-function test_partridge ()
+function est_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -373,7 +373,7 @@ function test_partridge ()
 		end end 
 	end
 
-	local solver = ec.solver (L)
+	local _, solver = ec.solver (L)
 
 	lu.assertEquals (N, 36)
 	lu.assertEquals (L.primarysize, N*N + n)
@@ -414,7 +414,7 @@ function test_mcc_simple ()
 		{v {'b'},          [v {'x'}] = {color = 1}},
 	}
 
-	local solver = ec.solver (L)
+	local _, solver = ec.solver (L)
 
 	local flag, selection = coroutine.resume (solver)
 	

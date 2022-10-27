@@ -101,7 +101,25 @@ function dl.solver (P)
 	end
 
 	local function nextitem_naive () 
-		return rlink[primary_header] end
+		local item = rlink[primary_header]
+		return item, len[item] 
+	end
+
+	local function nextitem_randomized () 
+
+		local min, pool = math.huge, nil
+
+		loop (primary_header, rlink, function (each) 
+
+			local l = len[each]
+			if l < min then min, pool = l, {each} 
+			elseif l == min then table.insert (pool, each) end
+		end)
+
+		assert (#pool > 0)	-- ensure we've found something.
+
+		return pool[math.random (#pool)], min
+	end
 
 	local function nextitem_minlen () 
 
@@ -163,14 +181,16 @@ function dl.solver (P)
 		if c == nocolor then cover (i) elseif c ~= handledcolor then purify (p, c) end
 	end
 
-	local function covertop (p)
+	local function covertop (p) commit (top[p], p) end
+
+	local function covertopm (p)
 		local item = top[p]
 		local b = bound[item] 
 		if b then 
 			b = b - 1
 			bound[item] = b
 			if b == 0 then cover (item) end 
-		else commit (item, p) end
+		else covertop (p) end
 	end
 
 	-- UNCOVERING ----------------------------------------------------------------
@@ -205,14 +225,16 @@ function dl.solver (P)
 		if c == nocolor then uncover (i) elseif c ~= handledcolor then unpurify (p, c) end
 	end
 
-	local function uncovertop (p) 
+	local function uncovertop (p) uncommit (top[p], p) end
+
+	local function uncovertopm (p) 
 		local item = top[p]
 		local b = bound[item] 
 		if b then 
 			b = b + 1
 			bound[item] = b
 			if b == 1 then uncover (item) end
-		else uncommit (item, p) end
+		else uncovertop (p) end
 	end
 
 	-- TWEAKING ------------------------------------------------------------------
@@ -266,12 +288,50 @@ function dl.solver (P)
 
 	------------------------------------------------------------------------------
 
-	local function R (l, opt)
+	local function XCC (l, opt)	-- eXact Cover with Colors.
+
+		if iscovered () then 
+
+			local perm = {}
+			while opt do
+				perm[opt.level] = opt.index
+				opt = opt.nextoption
+			end
+
+			table.sort(perm)
+			coroutine.yield (perm)
+		else
+			local item, len_item = nextitem_randomized ()
+
+			cover (item)
+
+			local ref = dlink[item]
+
+			loop (item, dlink, function (ref)
+
+				loop (ref, rlink, covertop) 
+
+				XCC (l + 1, { 
+					level = l,
+					point = ref,
+					index = option[ref],
+					nextoption = opt,
+				})
+
+				loop (ref, llink, uncovertop)
+			
+			end)
+			
+			uncover (item)
+		end
+	end
+
+	local function MCC (l, opt)	-- Multiplicities Cover with Colors.
 
 		if iscovered () then 
 			local cpy = {} 
 			while opt do 
-				cpy[opt.level] = opt.index 
+				if opt.index > 0 then table.insert(cpy, opt.index) end
 				opt = opt.nextoption 
 			end
 
@@ -296,19 +356,19 @@ function dl.solver (P)
 					elseif (len[item] + s) <= bound[item] then goto M8
 					elseif ref ~= item then tweak (item, ref); goto M6
 					elseif bound[item] > 0 or s > 0 then goto M7
-					else error (item) end
+					else goto M9 end
 
 				::M6::
-					loop (ref, rlink, covertop) 
+					loop (ref, rlink, covertopm) 
 
-					R (l + 1, { 
+					MCC (l + 1, { 
 						level = l,
 						point = ref,
 						index = option[ref],
 						nextoption = opt,
 					})
 
-					loop (ref, llink, uncovertop)
+					loop (ref, llink, uncovertopm)
 
 					ref = dlink[ref]
 
@@ -316,17 +376,29 @@ function dl.solver (P)
 
 				::M7::
 					disconnecth (item)
-					R (l, opt)
+					--R (l, opt)
+					MCC (l + 1, { 
+						level = l,
+						point = item,
+						index = 0,
+						nextoption = opt,
+					})
 					connecth (item)
 				
 				::M8::
 					if bound[item] == 0 and s == 0 then uncover (item) else untweak (item, ft) end
 					bound[item] = bound[item] + 1
+
+				::M9::
+
 			end
 		end
 	end
 
-	return coroutine.create (function () R (1, nil) end)
+	local xcc = coroutine.create (function () XCC (1, nil) end)
+	local mcc = coroutine.create (function () MCC (1, nil) end)
+
+	return xcc, mcc
 end
 
 function dl.indexed(name)
