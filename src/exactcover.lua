@@ -298,7 +298,7 @@ function dl.solver (P)
 
 	------------------------------------------------------------------------------
 
-	local function R (l, opt, C, U)	-- eXact Cover with Colors.
+	local function R (l, opt, C, U)	
 
 		if iscovered () then 
 
@@ -334,13 +334,14 @@ function dl.solver (P)
 		end
 	end
 	
-	local function XC (l, opt) R (l, opt, covertop, uncovertop) end
+	local function XC (l, opt) R (l, opt, covertop, uncovertop) end 	-- eXact Cover.
 
-	local function XCC (l, opt) R (l, opt, covertopc, uncovertopc) end
+	local function XCC (l, opt) R (l, opt, covertopc, uncovertopc) end 	-- eXact Cover with Colors.
 
 	local function MCC (l, opt)	-- Multiplicities Cover with Colors.
 
 		if iscovered () then 
+
 			local cpy = {} 
 			while opt do 
 				local i = opt.index
@@ -355,7 +356,7 @@ function dl.solver (P)
 
 			assert (branch >= 0)
 
-			if branch == 0 then return false end
+			if branch == 0 then return end
 				
 			local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
 			local ft = dlink[item]	-- which stands for `First Tweaks`.
@@ -374,7 +375,7 @@ function dl.solver (P)
 				else goto M67 end
 
 			::M6::
-				assert (ref ~= item) 
+				assert (ref ~= item and bound[item] == 0 and s == 0) 
 
 				loop (ref, rlink, covertopm) 
 
@@ -392,7 +393,7 @@ function dl.solver (P)
 				goto M4
 
 			::M67::
-				assert (ref == item)
+				assert (ref == item and bound[item] == 0 and s > 0)
 
 				MCC (l + 1, { 
 					level = l,
@@ -404,7 +405,7 @@ function dl.solver (P)
 				goto M8
 
 			::M7::
-				assert (ref == item)
+				assert (ref == item and bound[item] > 0)
 
 				disconnecth (item)
 
@@ -414,14 +415,13 @@ function dl.solver (P)
 					index = nil,
 					nextoption = opt,
 				})
-	
+
 				connecth (item)
 			
 			::M8::
 				if bound[item] == 0 and s == 0 then uncover (item) else untweak (ft) end
 				bound[item] = bound[item] + 1
 
-			return true
 		end
 	end
 
