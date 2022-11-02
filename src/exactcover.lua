@@ -178,7 +178,8 @@ function dl.solver (P)
 
 	local function commit (i, p)
 		local c = color[p]
-		if c == nocolor then cover (i) elseif c ~= handledcolor then purify (p, c) end
+		assert (c ~= handledcolor)
+		if c == nocolor then cover (i) else purify (p, c) end
 	end
 
 	local function covertop (p) commit (top[p], p) end
@@ -222,7 +223,8 @@ function dl.solver (P)
 
 	local function uncommit (i, p)
 		local c = color[p]
-		if c == nocolor then uncover (i) elseif c ~= handledcolor then unpurify (p, c) end
+		assert (c ~= handledcolor)
+		if c == nocolor then uncover (i) else unpurify (p, c) end
 	end
 
 	local function uncovertop (p) uncommit (top[p], p) end
@@ -301,11 +303,9 @@ function dl.solver (P)
 			table.sort(perm)
 			coroutine.yield (perm)
 		else
-			local item, len_item = nextitem_randomized ()
+			local item = nextitem_randomized ()
 
 			cover (item)
-
-			local ref = dlink[item]
 
 			loop (item, dlink, function (ref)
 
