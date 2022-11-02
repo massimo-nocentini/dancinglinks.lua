@@ -361,6 +361,7 @@ function dl.solver (P)
 			local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
 			local ft = dlink[item]	-- which stands for `First Tweaks`.
 
+			assert (bound[item] >= 1)
 			bound[item] = bound[item] - 1
 
 			if bound[item] == 0 then cover (item) end
@@ -375,7 +376,7 @@ function dl.solver (P)
 				else goto M67 end
 
 			::M6::
-				assert (ref ~= item and bound[item] == 0 and s == 0) 
+				assert (ref ~= item) 
 
 				loop (ref, rlink, covertopm) 
 
