@@ -345,7 +345,7 @@ function test_partridge_options_n_equals_2 ()
 
 end
 
-function test_partridge_xcc ()
+function est_partridge_xcc ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -394,7 +394,7 @@ function test_partridge_xcc ()
 	lu.assertItemsEquals (sol, {})
 
 end
-function est_partridge ()
+function test_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -464,6 +464,53 @@ function test_mcc_simple ()
 	}
 
 	local _, solver = ec.solver (L)
+
+	local flag, selection = coroutine.resume (solver)
+	
+	local sol = {}
+	for i, iopt in ipairs(selection or {}) do
+		sol[i] = L.options[iopt]	
+		--print (table.concat (sol[i], ' '))
+	end
+
+	lu.assertTrue (flag)
+	lu.assertItemsEquals (sol, {{"v_a", "v_c", v_x={color=1}, v_y={color=1}}, {"v_b", v_x={color=1}}, {"v_c", v_y={color=1}}})
+
+	-- no more solutions.
+	flag, selection = coroutine.resume (solver)
+	lu.assertTrue (flag)
+	lu.assertNil (selection)
+end
+
+function test_mcc_simple_xcc ()
+
+	local v = ec.indexed('v')
+
+	local L = { items = {}, options = {} }
+
+	L.items[ v {'a'} ] = { isprimary = true } 
+	L.items[ v {'b'} ] = { isprimary = true } 
+	L.items[ v {'c', 1} ] = { isprimary = true } 
+	L.items[ v {'c', 2} ] = { isprimary = true } 
+	L.items[ v {'c', 3} ] = { isprimary = false } 
+	L.items[ v {'x'} ] = { isprimary = false } 
+	L.items[ v {'y'} ] = { isprimary = false } 
+
+	L.options = {
+		{v {'c', 1},          	[v {'y'}] = {color = 1}},
+		{v {'c', 2},          	[v {'y'}] = {color = 1}},
+		{v {'c', 3},		[v {'y'}] = {color = 1}},
+		{v {'a'}, v {'b'}, 	[v {'x'}] = {color = 0}, [v {'y'}] = {color = 0}},
+		{v {'a'}, v {'c', 1}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
+		{v {'a'}, v {'c', 2}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
+		{v {'a'}, v {'c', 3}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
+		{v {'c', 1}, 	   	[v {'x'}] = {color = 0}},
+		{v {'c', 2}, 	   	[v {'x'}] = {color = 0}},
+		{v {'c', 3}, 	   	[v {'x'}] = {color = 0}},
+		{v {'b'},          	[v {'x'}] = {color = 1}},
+	}
+
+	local solver, _ = ec.solver (L)
 
 	local flag, selection = coroutine.resume (solver)
 	
