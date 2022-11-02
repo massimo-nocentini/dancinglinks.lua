@@ -181,7 +181,9 @@ function dl.solver (P)
 		if c == nocolor then cover (i) elseif c ~= handledcolor then purify (p, c) end
 	end
 
-	local function covertop (p) commit (top[p], p) end
+	local function covertop (p) cover (top[p]) end
+
+	local function covertopc (p) commit (top[p], p) end
 
 	local function covertopm (p)
 		local item = top[p]
@@ -225,7 +227,9 @@ function dl.solver (P)
 		if c == nocolor then uncover (i) elseif c ~= handledcolor then unpurify (p, c) end
 	end
 
-	local function uncovertop (p) uncommit (top[p], p) end
+	local function uncovertop (p) uncover (top[p]) end
+
+	local function uncovertopc (p) uncommit (top[p], p) end
 
 	local function uncovertopm (p) 
 		local item = top[p]
@@ -304,8 +308,6 @@ function dl.solver (P)
 			local item, len_item = nextitem_randomized ()
 
 			cover (item)
-
-			local ref = dlink[item]
 
 			loop (item, dlink, function (ref)
 
