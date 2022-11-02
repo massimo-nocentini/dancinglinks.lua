@@ -394,7 +394,8 @@ function est_partridge_xcc ()
 	lu.assertItemsEquals (sol, {})
 
 end
-function test_partridge ()
+
+function est_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -482,7 +483,7 @@ function test_mcc_simple ()
 	lu.assertNil (selection)
 end
 
-function test_mcc_simple_xcc ()
+function est_mcc_simple_xcc ()
 
 	local v = ec.indexed('v')
 

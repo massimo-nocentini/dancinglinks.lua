@@ -154,13 +154,12 @@ function dl.solver (P)
 
 	local function H (q)
 
-		if color[q] ~= handledcolor then 
+		if color[q] == handledcolor then return end
 
-			disconnectv (q)
+		disconnectv (q)
 
-			local x = top[q]
-			len[x] = len[x] - 1 
-		end
+		local x = top[q]
+		len[x] = len[x] - 1 
 	end
 
 	local function hide (p) loop(p, rlink, H) end
@@ -199,13 +198,12 @@ function dl.solver (P)
 
 	local function U (q)
 
-		if color[q] ~= handledcolor then 
+		if color[q] == handledcolor then return end
 
-			connectv (q)
+		connectv (q)
 
-			local x = top[q]
-			len[x] = len[x] + 1
-		end
+		local x = top[q]
+		len[x] = len[x] + 1
 	end
 
 	local function unhide (p) loop(p, llink, U) end
