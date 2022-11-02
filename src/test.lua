@@ -345,6 +345,55 @@ function test_partridge_options_n_equals_2 ()
 
 end
 
+function test_partridge_xcc ()
+
+	local n = 8
+	local N = math.tointeger(n * (n + 1) / 2)
+
+	local p, v = ec.indexed('p'), ec.indexed('v')
+
+	local L = { items = {}, options = {} }	-- our problem
+
+	for k = 1, n do 
+
+		for kk = 1, k do
+
+			L.items[ v {k, kk} ] = { isprimary = true }
+
+			for i = 0, N - k do for j = 0, N - k do
+
+				local option = { v {k, kk} }
+
+				for u = 0, k - 1 do for r = 0, k - 1 do
+					L.items[ p {i + u, j + r} ] = { isprimary = true }
+					table.insert(option, p {i + u, j + r})
+				end end
+
+				table.insert(L.options, option) 
+			end end 
+		end
+	end
+
+	local solver = ec.solver (L)
+
+	lu.assertEquals (N, 36)
+	lu.assertEquals (L.primarysize, N*N + N)
+	lu.assertEquals (L.secondarysize, 0)
+	lu.assertEquals (#L.options, 35484)
+
+	print 'first resume'
+	local flag, selection = coroutine.resume (solver)
+
+	local sol = {}
+	for i, iopt in ipairs(selection or {}) do
+		sol[i] = L.options[iopt]	
+		--print (table.concat (sol[i], ' '))
+	end
+
+	lu.assertTrue (flag)
+	lu.assertItemsEquals (sol, {})
+
+end
 function est_partridge ()
 
 	local n = 8
