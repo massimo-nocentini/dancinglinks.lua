@@ -395,7 +395,7 @@ function est_partridge_xcc ()
 
 end
 
-function est_partridge ()
+function test_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -413,9 +413,8 @@ function est_partridge ()
 			local option = { v {k} }
 
 			for u = 0, k - 1 do for r = 0, k - 1 do
-				L.items[ p {i + u, j + r} ] = { isprimary = true, atleast = 1, atmost = 1 }
+				L.items[ p {i + u, j + r} ] = { isprimary = true }
 
-				--option[p {i + u, j + r}] = {color = 1}
 				table.insert(option, p {i + u, j + r})
 			end end
 

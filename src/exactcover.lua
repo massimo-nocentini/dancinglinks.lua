@@ -130,7 +130,6 @@ function dl.solver (P)
 
 	local function nextitem_minlen () 
 
-
 		local min, item = math.huge, nil
 
 		loop (primary_header, rlink, function (each) 
@@ -370,12 +369,13 @@ function dl.solver (P)
 			::M4::
 				if bound[item] == 0 and s == 0 then if ref ~= item then goto M6 else goto M8 end
 				elseif (len[item] + s) <= bound[item] then goto M8
-				elseif ref ~= item then tweak (item, ref)	-- then proceed to M6.
+				elseif ref ~= item then tweak (item, ref)	-- then, proceed to M6.
 				elseif bound[item] > 0 then goto M7
 				else goto M67 end
 
 			::M6::
-				assert (ref ~= item)
+				assert (ref ~= item) 
+
 				loop (ref, rlink, covertopm) 
 
 				MCC (l + 1, { 
@@ -393,17 +393,19 @@ function dl.solver (P)
 
 			::M67::
 				assert (ref == item)
+
 				MCC (l + 1, { 
 					level = l,
 					point = item,
 					index = nil,
 					nextoption = opt,
 				})
-	
+
 				goto M8
 
 			::M7::
 				assert (ref == item)
+
 				disconnecth (item)
 
 				MCC (l + 1, { 
