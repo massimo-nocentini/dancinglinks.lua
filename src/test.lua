@@ -395,7 +395,7 @@ function est_partridge_xcc ()
 
 end
 
-function test_partridge ()
+function est_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -482,11 +482,14 @@ function test_mcc_simple ()
 	lu.assertNil (selection)
 end
 
-function est_mcc_simple_xcc ()
+function test_mcc_simple_xcc_manual ()
 
 	local v = ec.indexed('v')
+	local o = ec.indexed('o')
 
 	local L = { items = {}, options = {} }
+
+	local t, w, s = os.tmpname (), os.tmpname (), os.tmpname ()
 
 	L.items[ v {'a'} ] = { isprimary = true } 
 	L.items[ v {'b'} ] = { isprimary = true } 
@@ -496,18 +499,22 @@ function est_mcc_simple_xcc ()
 	L.items[ v {'x'} ] = { isprimary = false } 
 	L.items[ v {'y'} ] = { isprimary = false } 
 
+	L.items[ o { t } ] = { isprimary = false } 
+	L.items[ o { w } ] = { isprimary = false } 
+	L.items[ o { s } ] = { isprimary = false } 
+
 	L.options = {
-		{v {'c', 1},          	[v {'y'}] = {color = 1}},
-		{v {'c', 2},          	[v {'y'}] = {color = 1}},
-		{v {'c', 3},		[v {'y'}] = {color = 1}},
-		{v {'a'}, v {'b'}, 	[v {'x'}] = {color = 0}, [v {'y'}] = {color = 0}},
-		{v {'a'}, v {'c', 1}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
-		{v {'a'}, v {'c', 2}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
-		{v {'a'}, v {'c', 3}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
-		{v {'c', 1}, 	   	[v {'x'}] = {color = 0}},
-		{v {'c', 2}, 	   	[v {'x'}] = {color = 0}},
-		{v {'c', 3}, 	   	[v {'x'}] = {color = 0}},
-		{v {'b'},          	[v {'x'}] = {color = 1}},
+		{ o { t }, v {'c', 1}, [v {'y'}] = {color = 1}},
+		{ o { t }, v {'c', 2}, [v {'y'}] = {color = 1}},
+		{ o { t }, v {'c', 3}, [v {'y'}] = {color = 1}},
+		{ v {'a'}, v {'b'}, [v {'x'}] = {color = 0}, [v {'y'}] = {color = 0}},
+		{ o { w }, v {'a'}, v {'c', 1}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
+		{ o { w }, v {'a'}, v {'c', 2}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
+		{ o { w }, v {'a'}, v {'c', 3}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
+		{ o { s }, v {'c', 1}, 	   	[v {'x'}] = {color = 0}},
+		{ o { s }, v {'c', 2}, 	   	[v {'x'}] = {color = 0}},
+		{ o { s }, v {'c', 3}, 	   	[v {'x'}] = {color = 0}},
+		{ v {'b'}, [v {'x'}] = {color = 1}},
 	}
 
 	local solver, _ = ec.solver (L)
@@ -528,5 +535,48 @@ function est_mcc_simple_xcc ()
 	lu.assertTrue (flag)
 	lu.assertNil (selection)
 end
+
+function est_mcc_simple_xcc_automatic ()
+
+	local v = ec.indexed('v')
+	local o = ec.indexed('o')
+
+	local L = { items = {}, options = {} }
+
+	L.items[ v {'a'} ] = { isprimary = true } 
+	L.items[ v {'b'} ] = { isprimary = true } 
+	L.items[ v {'c'} ] = { isprimary = true, atleast = 2, atmost = 3 } 
+	L.items[ v {'x'} ] = { isprimary = false } 
+	L.items[ v {'y'} ] = { isprimary = false } 
+
+	L.options = {
+		{v {'c'},          [v {'y'}] = {color = 1}},
+		{v {'a'}, v {'b'}, [v {'x'}] = {color = 0}, [v {'y'}] = {color = 0}},
+		{v {'a'}, v {'c'}, [v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
+		{v {'c'}, 	   [v {'x'}] = {color = 0}},
+		{v {'b'},          [v {'x'}] = {color = 1}},
+	}
+
+	ec.expand_multiplicities (L, o)
+
+	local solver, _ = ec.solver (L)
+
+	local flag, selection = coroutine.resume (solver)
+	
+	local sol = {}
+	for i, iopt in ipairs(selection or {}) do
+		sol[i] = L.options[iopt]	
+		--print (table.concat (sol[i], ' '))
+	end
+
+	lu.assertTrue (flag)
+	lu.assertItemsEquals (sol, {{"v_a", "v_c", v_x={color=1}, v_y={color=1}}, {"v_b", v_x={color=1}}, {"v_c", v_y={color=1}}})
+
+	-- no more solutions.
+	flag, selection = coroutine.resume (solver)
+	lu.assertTrue (flag)
+	lu.assertNil (selection)
+end
+
 
 os.exit( lu.LuaUnit.run() )

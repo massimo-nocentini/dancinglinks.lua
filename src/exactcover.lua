@@ -442,4 +442,44 @@ function dl.indexed(name)
 	end	
 end
 
+function dl.expand_multiplicities(P, base)
+
+
+	local t = base { os.tmpname () }
+	
+	P.items[t] = { isprimary = false }
+
+	--for _, descriptor in ipairs (...) do
+
+		local start = descriptor.atleast or 1
+		local items = {}
+
+		for i = 1, start do
+			local item = base { key, i } 
+			P.items[item] = {isprimary = true}
+			table.insert (items, item)
+		end
+
+		for i = start + 1, descriptor.atmost or start do
+			local item = base { key, i } 
+			P.items[item] = {isprimary = false}
+			table.insert (items, item)
+		end
+
+		for _, item in ipairs (items) do
+			local opt = { t }
+
+			for k, v in pairs (option) do
+				if k == descriptor.key then opt[item] = v
+				elseif v == descriptor.key then opt[k] = item
+				else opt[k] = v end
+			end
+
+			table.insert(P.options, opt)
+		end
+
+	--end
+
+end
+
 return dl
