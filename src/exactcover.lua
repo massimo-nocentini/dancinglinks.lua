@@ -15,6 +15,23 @@ local function monus (x, y) return math.max (x - y, 0) end
 
 local nocolor, handledcolor, noop = {}, {}, function () end	-- just witnesses.
 
+local function loop (start, toward, f, inclusive)
+
+	if inclusive then
+		local each = start
+		repeat 
+			local v = f (each) 
+			if v then return v else each = toward[each] end
+		until each == start
+	else
+		local each = toward[start]
+		while each ~= start do --f (each); each = toward[each]
+			local v = f (each)
+			if v then return v else each = toward[each] end
+		end
+	end
+end
+
 function dl.solver (P)
 
 	local llink, rlink, ulink, dlink, len, top, option, color, slack, bound  = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
@@ -85,24 +102,14 @@ function dl.solver (P)
 	-- HELPERS  ------------------------------------------------------------------
 
 	local function iscovered () return rlink[primary_header] == primary_header end
+
+	local function hashandledcolor (q) return color[q] == handledcolor end
+
+	local function branch (each) return monus (len[each] + 1, monus (bound[each], slack[each])) end
 		
-	local function loop (start, toward, f, inclusive)
-
-		if inclusive then
-			local each = start
-			repeat f (each); each = toward[each] until each == start
-		else
-			local each = toward[start]
-			while each ~= start do 
-				local v = f (each)
-				if v then return v else each = toward[each] end
-			end
-		end
-	end
-
 	local function nextitem_naive () 
 		local item = rlink[primary_header]
-		return item, len[item] 
+		return item, branch (item)
 	end
 
 	local function nextitem_randomized () 
@@ -123,7 +130,6 @@ function dl.solver (P)
 
 	local function nextitem_minlen () 
 
-		local function branch (each) return monus (len[each] + 1, monus (bound[each], slack[each])) end
 
 		local min, item = math.huge, nil
 
@@ -154,35 +160,36 @@ function dl.solver (P)
 
 	local function H (q)
 
-		if color[q] == handledcolor then return end
+		if hashandledcolor (q) then return end
 
-		disconnectv (q)
 
 		local x = top[q]
 		len[x] = len[x] - 1 
+
+		return disconnectv (q)
 	end
 
-	local function hide (p) loop(p, rlink, H) end
+	local function hide (p) return loop (p, rlink, H) end
 
 	local function purify (p, c)
-		loop (top[p], dlink, function (q)
+		return loop (top[p], dlink, function (q)
 			if color[q] == c then color[q] = handledcolor else hide (q) end
 		end)
 	end
 
 	local function cover (i)
 		loop(i, dlink, hide)
-		disconnecth (i)
+		return disconnecth (i)
 	end
 
 	local function commit (i, p)
 		local c = color[p]
-		if c == nocolor then cover (i) elseif c ~= handledcolor then purify (p, c) end
+		if c == nocolor then return cover (i) elseif c ~= handledcolor then return purify (p, c) end
 	end
 
-	--local function covertop (p) cover (top[p]) end
+	local function covertop (p) return cover (top[p]) end
 
-	local function covertop (p) commit (top[p], p) end
+	local function covertopc (p) return commit (top[p], p) end
 
 	local function covertopm (p)
 		local item = top[p]
@@ -190,44 +197,43 @@ function dl.solver (P)
 		if b then 
 			b = b - 1
 			bound[item] = b
-			if b == 0 then cover (item) end 
-		else covertop (p) end
+			if b == 0 then return cover (item) end 
+		else return commit (item, p) end
 	end
 
 	-- UNCOVERING ----------------------------------------------------------------
 
 	local function U (q)
 
-		if color[q] == handledcolor then return end
-
-		connectv (q)
+		if hashandledcolor (q) then return end
 
 		local x = top[q]
 		len[x] = len[x] + 1
+		return connectv (q)
 	end
 
-	local function unhide (p) loop(p, llink, U) end
+	local function unhide (p) return loop(p, llink, U) end
 
 	local function unpurify (p, c)
 
-		loop (top[p], ulink, function (q)
-			if color[q] == handledcolor then color[q] = c else unhide (q) end end)
+		return loop (top[p], ulink, function (q)
+			if hashandledcolor (q) then color[q] = c else unhide (q) end end)
 	end
 
 	local function uncover (i)
 
 		connecth (i)
-		loop(i, ulink, unhide)	
+		return loop(i, ulink, unhide)	
 	end
 
 	local function uncommit (i, p)
 		local c = color[p]
-		if c == nocolor then uncover (i) elseif c ~= handledcolor then unpurify (p, c) end
+		if c == nocolor then return uncover (i) elseif c ~= handledcolor then return unpurify (p, c) end
 	end
 
-	--local function uncovertop (p) uncover (top[p]) end
+	local function uncovertop (p) return uncover (top[p]) end
 
-	local function uncovertop (p) uncommit (top[p], p) end
+	local function uncovertopc (p) return uncommit (top[p], p) end
 
 	local function uncovertopm (p) 
 		local item = top[p]
@@ -235,8 +241,8 @@ function dl.solver (P)
 		if b then 
 			b = b + 1
 			bound[item] = b
-			if b == 1 then uncover (item) end
-		else uncovertop (p) end
+			if b == 1 then return uncover (item) end
+		else return uncommit (item, p) end
 	end
 
 	-- TWEAKING ------------------------------------------------------------------
@@ -250,11 +256,11 @@ function dl.solver (P)
 
 	local function tweakh (p, x)
 		hide (x)
-		tweakw (p, x) 
+		return tweakw (p, x) 
 	end
 
 	local function tweak (p, x)
-		if bound[p] == 0 then tweakw (p, x) else tweakh (p, x) end
+		if bound[p] == 0 then return tweakw (p, x) else return tweakh (p, x) end
 	end
 
 	-- UNTWEAKING ------------------------------------------------------------------
@@ -284,13 +290,16 @@ function dl.solver (P)
 		return p
 	end
 
-	local function untweakh (a) untweakf (a, unhide) end
-	local function untweakw (a) uncover (untweakf (a, noop)) end
-	local function untweak (item, a) if bound[item] == 0 then untweakw (a) else untweakh (a) end end
+	local function untweakh (a) return untweakf (a, unhide) end
+	local function untweakw (a) return uncover (untweakf (a, noop)) end
+	local function untweak (a) 
+		local item = top[a]
+		if bound[item] == 0 then return untweakw (a) else return untweakh (a) end 
+	end
 
 	------------------------------------------------------------------------------
 
-	local function XCC (l, opt)	-- eXact Cover with Colors.
+	local function R (l, opt, C, U)	-- eXact Cover with Colors.
 
 		if iscovered () then 
 
@@ -309,22 +318,26 @@ function dl.solver (P)
 
 			loop (item, dlink, function (ref)
 
-				loop (ref, rlink, covertop) 
+				loop (ref, rlink, C) 
 
-				XCC (l + 1, { 
+				R (l + 1, { 
 					level = l,
 					point = ref,
 					index = option[ref],
 					nextoption = opt,
-				})
+				}, C, U)
 
-				loop (ref, llink, uncovertop)
+				loop (ref, llink, U)
 			
 			end)
 			
 			uncover (item)
 		end
 	end
+	
+	local function XC (l, opt) R (l, opt, covertop, uncovertop) end
+
+	local function XCC (l, opt) R (l, opt, covertopc, uncovertopc) end
 
 	local function MCC (l, opt)	-- Multiplicities Cover with Colors.
 
@@ -337,62 +350,80 @@ function dl.solver (P)
 			end
 
 			table.sort(cpy)
-			coroutine.yield (cpy)
+			local reward = coroutine.yield (cpy)	-- possibly prepare for some learning?
 		else
 			local item, branch = nextitem_minlen ()
 
-			if branch > 0 then
+			assert (branch >= 0)
+
+			if branch == 0 then return false end
 				
-				local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
-				local ft = dlink[item]	-- which stands for `First Tweaks`.
+			local s = slack[item]	-- the slack `s` doesn't change during the actual recursion step.
+			local ft = dlink[item]	-- which stands for `First Tweaks`.
 
-				bound[item] = bound[item] - 1
+			bound[item] = bound[item] - 1
 
-				if bound[item] == 0 then cover (item) end
+			if bound[item] == 0 then cover (item) end
 
-				local ref = dlink[item]
-				
-				::M5::
-					if bound[item] == 0 and s == 0 then if ref ~= item then goto M6 else goto M8 end
-					elseif (len[item] + s) <= bound[item] then goto M8
-					elseif ref ~= item then tweak (item, ref); goto M6
-					elseif bound[item] > 0 or s > 0 then goto M7
-					else error 'not expected' end
+			local ref = dlink[item]
+			
+			::M4::
+				if bound[item] == 0 and s == 0 then if ref ~= item then goto M6 else goto M8 end
+				elseif (len[item] + s) <= bound[item] then goto M8
+				elseif ref ~= item then tweak (item, ref)	-- then proceed to M6.
+				elseif bound[item] > 0 then goto M7
+				else goto M67 end
 
-				::M6::
-					loop (ref, rlink, covertopm) 
+			::M6::
+				assert (ref ~= item)
+				loop (ref, rlink, covertopm) 
 
-					MCC (l + 1, { 
-						level = l,
-						point = ref,
-						index = option[ref],
-						nextoption = opt,
-					})
+				MCC (l + 1, { 
+					level = l,
+					point = ref,
+					index = option[ref],
+					nextoption = opt,
+				})
 
-					loop (ref, llink, uncovertopm)
+				loop (ref, llink, uncovertopm)
 
-					ref = dlink[ref]
+				ref = dlink[ref]
 
-					goto M5
+				goto M4
 
-				::M7::
-					disconnecth (item)
-					--R (l, opt)
-					MCC (l + 1, { 
-						level = l,
-						point = item,
-						index = nil,
-						nextoption = opt,
-					})
-					connecth (item)
-				
-				::M8::
-					if bound[item] == 0 and s == 0 then uncover (item) else untweak (item, ft) end
-					bound[item] = bound[item] + 1
-			end
+			::M67::
+				assert (ref == item)
+				MCC (l + 1, { 
+					level = l,
+					point = item,
+					index = nil,
+					nextoption = opt,
+				})
+	
+				goto M8
+
+			::M7::
+				assert (ref == item)
+				disconnecth (item)
+
+				MCC (l + 1, { 
+					level = l,
+					point = item,
+					index = nil,
+					nextoption = opt,
+				})
+	
+				connecth (item)
+			
+			::M8::
+				if bound[item] == 0 and s == 0 then uncover (item) else untweak (ft) end
+				bound[item] = bound[item] + 1
+
+			return true
 		end
 	end
 
+	local xc  = coroutine.create (function () XC (1, nil) end)
 	local xcc = coroutine.create (function () XCC (1, nil) end)
 	local mcc = coroutine.create (function () MCC (1, nil) end)
 
@@ -403,7 +434,7 @@ function dl.indexed(name)
 
 	return function (tbl)
 		local seq = {}
-		for i, item in ipairs(tbl) do seq[i] = item end
+		for i, item in ipairs(tbl) do seq[i] = tostring (item) end
 		return name .. '_' .. table.concat (seq, ',')
 	end	
 end
