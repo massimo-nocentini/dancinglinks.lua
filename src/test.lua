@@ -395,7 +395,7 @@ function est_partridge_xcc ()
 
 end
 
-function est_partridge ()
+function test_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)

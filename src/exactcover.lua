@@ -331,7 +331,8 @@ function dl.solver (P)
 		if iscovered () then 
 			local cpy = {} 
 			while opt do 
-				if opt.index > 0 then table.insert(cpy, opt.index) end
+				local i = opt.index
+				if i then table.insert (cpy, i) end
 				opt = opt.nextoption 
 			end
 
@@ -356,7 +357,7 @@ function dl.solver (P)
 					elseif (len[item] + s) <= bound[item] then goto M8
 					elseif ref ~= item then tweak (item, ref); goto M6
 					elseif bound[item] > 0 or s > 0 then goto M7
-					else goto M9 end
+					else error 'not expected' end
 
 				::M6::
 					loop (ref, rlink, covertopm) 
@@ -380,7 +381,7 @@ function dl.solver (P)
 					MCC (l + 1, { 
 						level = l,
 						point = item,
-						index = 0,
+						index = nil,
 						nextoption = opt,
 					})
 					connecth (item)
@@ -388,9 +389,6 @@ function dl.solver (P)
 				::M8::
 					if bound[item] == 0 and s == 0 then uncover (item) else untweak (item, ft) end
 					bound[item] = bound[item] + 1
-
-				::M9::
-
 			end
 		end
 	end
