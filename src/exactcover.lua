@@ -32,72 +32,162 @@ local function loop (start, toward, f, inclusive)
 	end
 end
 
-function dl.solver (P)
+function dl.solver (P, expand_multiplicities)
 
-	local llink, rlink, ulink, dlink, len, top, option, color, slack, bound  = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
+	local obase = dl.indexed (os.tmpname ())
+
+	local llink, rlink, ulink, dlink, len, top, option, color, slack, bound, multiplicities = 
+		{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
 
 	local primary_header = {}
 	local last_primary_item = primary_header	-- cursor variable for primary items.
 
 	local primarysize, secondarysize = 0, 0
 
+	local function addprimary (last_primary_item, mitem)
+
+		len[mitem] = 0
+
+		ulink[mitem], dlink[mitem] = mitem, mitem	-- self loops on the vertical dimension.
+		llink[mitem], rlink[last_primary_item] = last_primary_item, mitem	-- link among the horizontal dimension.
+
+		primarysize = primarysize + 1
+
+		return mitem
+	end
+
+	local function addsecondary (mitem)
+
+		len[mitem] = 0
+
+		ulink[mitem], dlink[mitem] = mitem, mitem
+		llink[mitem], rlink[mitem] = mitem, mitem
+
+		secondarysize = secondarysize + 1
+
+		return mitem
+	end
+
 	for item, descriptor in pairs(P.items) do	-- link primary items
 
-		len[item] = 0
-
 		if descriptor.isprimary then
-
-			ulink[item], dlink[item] = item, item	-- self loops on the vertical dimension.
-			llink[item], rlink[last_primary_item] = last_primary_item, item	-- link among the horizontal dimension.
 
 			local u, v = descriptor.atleast or 1, descriptor.atmost or 1
 			assert (u >= 0 and v > 0 and v >= u)
 			slack[item], bound[item] = v - u, v
 
-			last_primary_item = item
-			primarysize = primarysize + 1
-		else 
-			ulink[item], dlink[item] = item, item
-			llink[item], rlink[item] = item, item
+			if expand_multiplicities and v > 1 then
+				
+				local mul = {}
 
-			secondarysize = secondarysize + 1
-		end
+				for i = 1, u do
+					local mitem = obase { item, i }		-- link `mitem` as a primary item.
+
+					mul[i] = mitem
+
+					last_primary_item = addprimary (last_primary_item, mitem)
+				end
+
+				for i = u + 1, v do
+					local mitem = obase { item, i }		-- link `mitem` as a secondary item.
+
+					mul[i] = mitem
+
+					addsecondary (mitem)
+				end
+
+				multiplicities[item] = mul
+
+			else last_primary_item = addprimary (last_primary_item, item) end
+		else addsecondary (item) end
 	end
-
-	P.primarysize, P.secondarysize = primarysize, secondarysize	-- update the given problem, in place.
 
 	rlink[last_primary_item], llink[primary_header] = primary_header, last_primary_item	-- closing the doubly circular list.
 
+	local localoptions = {}
+
 	for iopt, opt in ipairs(P.options) do
 
-		local header = {}
-		local last = header
+		local localopt = { {} }	-- the initial state for the cartesian product.
 
 		for id, decoration in pairs(opt) do
 
 			if type (id) == 'number' then id, decoration = decoration, {} end
-			
-			local o = id
 
-			len[o] = len[o] + 1
+			local mul = multiplicities[id]
 
-			local point = {}	-- every single 1 in the model matrix.
+			if mul then 
+				
+				-- <3
 
-			top[point], option[point], color[point] = o, iopt, decoration.color or nocolor
+				local newlocalopt = {}
 
-			local q = ulink[o]
-			ulink[point], ulink[o] = q, point
-			dlink[point], dlink[q] = o, point
+				for _, o in ipairs (localopt) do
 
-			llink[point], rlink[last]  = last, point
-			last = point
+					for _, m in ipairs (mul) do
+						local newo = {}
+						for k, v in pairs (o) do newo[k] = v end	-- copy the table.
+						newo[m] = decoration
+						table.insert (newlocalopt, newo)
+					end
+				end
+
+				localopt = newlocalopt
+
+			else for _, o in ipairs (localopt) do o[id] = decoration end end
 		end
 
-		assert (not llink[header])
-		local first = rlink[header]
-		rlink[header] = nil
-		rlink[last], llink[first]  = first, last
+		if #localopt > 1 then
+
+			local item = obase { iopt, os.tmpname () }
+
+			addsecondary (item)
+
+			local decoration = {}	
+			
+			for _, o in ipairs (localopt) do o[item] = decoration end
+		end
+
+		localoptions[{index = iopt}] = localopt		-- using a table as a key is a kind of randomization.
 	end
+
+	local optionssize = 0
+
+	for key, mopt in pairs(localoptions) do
+
+		local iopt = key.index
+
+		for _, opt in ipairs (mopt) do
+
+			optionssize = optionssize + 1
+
+			local header = {}
+			local last = header
+
+			for o, decoration in pairs(opt) do
+
+				len[o] = len[o] + 1
+
+				local point = {}	-- every single 1 in the model matrix.
+
+				top[point], option[point], color[point] = o, iopt, decoration.color or nocolor
+
+				local q = ulink[o]
+				ulink[point], ulink[o] = q, point
+				dlink[point], dlink[q] = o, point
+
+				llink[point], rlink[last]  = last, point
+				last = point
+			end
+
+			assert (not llink[header])
+			local first = rlink[header]
+			rlink[header] = nil
+			rlink[last], llink[first]  = first, last
+		end
+	end
+
+	P.primarysize, P.secondarysize, P.optionssize = primarysize, secondarysize, optionssize	-- update the given problem, in place.
 
 	-- HELPERS  ------------------------------------------------------------------
 

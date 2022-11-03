@@ -395,7 +395,7 @@ function est_partridge_xcc ()
 
 end
 
-function est_partridge ()
+function test_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -422,12 +422,13 @@ function est_partridge ()
 		end end 
 	end
 
-	local _, solver = ec.solver (L)
+	local solver = ec.solver (L, true)
 
 	lu.assertEquals (N, 36)
-	lu.assertEquals (L.primarysize, N*N + n)
-	lu.assertEquals (L.secondarysize, 0)
+	lu.assertEquals (L.primarysize, N*N + N)
+	lu.assertEquals (L.secondarysize, 7196)
 	lu.assertEquals (#L.options, 8492)
+	lu.assertEquals (L.optionssize, 35484)
 
 	print 'first resume'
 	local flag, selection = coroutine.resume (solver)
@@ -580,7 +581,7 @@ function test_mcc_simple_xcc_manual ()
 
 end
 
-function est_mcc_simple_xcc_automatic ()
+function test_mcc_simple_xcc_automatic ()
 
 	local v = ec.indexed('v')
 	local o = ec.indexed('o')
@@ -601,9 +602,7 @@ function est_mcc_simple_xcc_automatic ()
 		{v {'b'},          [v {'x'}] = {color = 1}},
 	}
 
-	ec.expand_multiplicities (L, o)
-
-	local solver, _ = ec.solver (L)
+	local solver, _ = ec.solver (L, true)
 
 	local flag, selection = coroutine.resume (solver)
 	
