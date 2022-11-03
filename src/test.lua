@@ -503,19 +503,47 @@ function test_mcc_simple_xcc_manual ()
 	L.items[ o { w } ] = { isprimary = false } 
 	L.items[ o { s } ] = { isprimary = false } 
 
-	L.options = {
+	local e1, e2, e3 =
+		{"v_c", v_y={color=1}},
+		{"v_a", "v_c", v_x={color=1}, v_y={color=1}},
+		{v {'c'}, [v {'x'}] = {color = 0}}
+
+	local o1, o2, o3 = 
 		{ o { t }, v {'c', 1}, [v {'y'}] = {color = 1}},
 		{ o { t }, v {'c', 2}, [v {'y'}] = {color = 1}},
-		{ o { t }, v {'c', 3}, [v {'y'}] = {color = 1}},
-		{ v {'a'}, v {'b'}, [v {'x'}] = {color = 0}, [v {'y'}] = {color = 0}},
+		{ o { t }, v {'c', 3}, [v {'y'}] = {color = 1}} 
+
+	local o4, o5, o6 =
 		{ o { w }, v {'a'}, v {'c', 1}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
 		{ o { w }, v {'a'}, v {'c', 2}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
-		{ o { w }, v {'a'}, v {'c', 3}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}},
+		{ o { w }, v {'a'}, v {'c', 3}, 	[v {'x'}] = {color = 1}, [v {'y'}] = {color = 1}} 
+
+	local o7, o8, o9 =
 		{ o { s }, v {'c', 1}, 	   	[v {'x'}] = {color = 0}},
 		{ o { s }, v {'c', 2}, 	   	[v {'x'}] = {color = 0}},
-		{ o { s }, v {'c', 3}, 	   	[v {'x'}] = {color = 0}},
+		{ o { s }, v {'c', 3}, 	   	[v {'x'}] = {color = 0}}
+
+	L.options = {
+		o1, o2, o3,
+		{ v {'a'}, v {'b'}, [v {'x'}] = {color = 0}, [v {'y'}] = {color = 0}},
+		o4, o5, o6,
+		o7, o8, o9,
 		{ v {'b'}, [v {'x'}] = {color = 1}},
 	}
+
+	local map = {}
+
+	map[o1] = e1
+	map[o2] = e1
+	map[o3] = e1
+
+	map[o4] = e2
+	map[o5] = e2
+	map[o6] = e2
+
+	map[o7] = e3
+	map[o8] = e3
+	map[o9] = e3
 
 	local solver, _ = ec.solver (L)
 
@@ -523,17 +551,33 @@ function test_mcc_simple_xcc_manual ()
 	
 	local sol = {}
 	for i, iopt in ipairs(selection or {}) do
-		sol[i] = L.options[iopt]	
+		local o = L.options[iopt]	
+		local m = map[o]
+		if m then sol[i] = m else sol[i] = o end
 		--print (table.concat (sol[i], ' '))
 	end
 
 	lu.assertTrue (flag)
-	lu.assertItemsEquals (sol, {{"v_a", "v_c", v_x={color=1}, v_y={color=1}}, {"v_b", v_x={color=1}}, {"v_c", v_y={color=1}}})
+	lu.assertItemsEquals (sol, {e2, {"v_b", v_x={color=1}}, e1})
+
+	-- one more solution, namely the same as before because of combinations.
+	flag, selection = coroutine.resume (solver)
+
+	local sol = {}
+	for i, iopt in ipairs(selection or {}) do
+		local o = L.options[iopt]	
+		local m = map[o]
+		if m then sol[i] = m else sol[i] = o end
+		--print (table.concat (sol[i], ' '))
+	end
+
+	lu.assertTrue (flag)
+	lu.assertItemsEquals (sol, {e2, {"v_b", v_x={color=1}}, e1})
 
 	-- no more solutions.
 	flag, selection = coroutine.resume (solver)
-	lu.assertTrue (flag)
 	lu.assertNil (selection)
+
 end
 
 function est_mcc_simple_xcc_automatic ()
