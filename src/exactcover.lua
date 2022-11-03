@@ -298,7 +298,7 @@ function dl.solver (P)
 
 	------------------------------------------------------------------------------
 
-	local function R (l, opt, C, U)	
+	local function R (l, opt, C, U, memo)	
 
 		if iscovered () then 
 
@@ -309,7 +309,12 @@ function dl.solver (P)
 			end
 
 			table.sort(perm)
-			coroutine.yield (perm)
+
+			local digest = table.concat (perm, ' ')
+			if not memo[digest] then 
+				memo[digest] = perm 
+				coroutine.yield (perm)
+			end
 		else
 			local item = nextitem_randomized ()
 
@@ -324,7 +329,7 @@ function dl.solver (P)
 					point = ref,
 					index = option[ref],
 					nextoption = opt,
-				}, C, U)
+				}, C, U, memo)
 
 				loop (ref, llink, U)
 			
@@ -334,9 +339,9 @@ function dl.solver (P)
 		end
 	end
 	
-	local function XC (l, opt) R (l, opt, covertop, uncovertop) end 	-- eXact Cover.
+	local function XC (l, opt) R (l, opt, covertop, uncovertop, {}) end 	-- eXact Cover.
 
-	local function XCC (l, opt) R (l, opt, covertopc, uncovertopc) end 	-- eXact Cover with Colors.
+	local function XCC (l, opt) R (l, opt, covertopc, uncovertopc, {}) end 	-- eXact Cover with Colors.
 
 	local function MCC (l, opt)	-- Multiplicities Cover with Colors.
 
