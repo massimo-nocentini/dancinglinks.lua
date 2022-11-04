@@ -345,7 +345,7 @@ function test_partridge_options_n_equals_2 ()
 
 end
 
-function est_partridge_xcc ()
+function est_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -354,32 +354,26 @@ function est_partridge_xcc ()
 
 	local L = { items = {}, options = {} }	-- our problem
 
-	for k = 1, n do 
+	for k = 1, n do L.items[ v {k} ] = { isprimary = true, atleast = k, atmost = k } end
 
-		for kk = 1, k do
+	for i = 0, N - 1 do for j = 0, N - 1 do L.items[ p {i, j} ] = { isprimary = true } end end
 
-			L.items[ v {k, kk} ] = { isprimary = true }
+	for k = 1, n do for i = 0, N - k do for j = 0, N - k do
 
-			for i = 0, N - k do for j = 0, N - k do
+		local option = { v {k} }
 
-				local option = { v {k, kk} }
+		for u = 0, k - 1 do for r = 0, k - 1 do table.insert(option, p {i + u, j + r}) end end
 
-				for u = 0, k - 1 do for r = 0, k - 1 do
-					L.items[ p {i + u, j + r} ] = { isprimary = true }
-					table.insert(option, p {i + u, j + r})
-				end end
+		table.insert(L.options, option) 
 
-				table.insert(L.options, option) 
-			end end 
-		end
-	end
+	end end end
 
-	local solver = ec.solver (L)
+	local _, solver = ec.solver (L, false)
 
 	lu.assertEquals (N, 36)
-	lu.assertEquals (L.primarysize, N*N + N)
+	lu.assertEquals (L.primarysize, N*N + n)
 	lu.assertEquals (L.secondarysize, 0)
-	lu.assertEquals (#L.options, 35484)
+	lu.assertEquals (#L.options, L.optionssize)
 
 	print 'first resume'
 	local flag, selection = coroutine.resume (solver)
@@ -395,7 +389,7 @@ function est_partridge_xcc ()
 
 end
 
-function test_partridge ()
+function test_partridge_xcc ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -404,23 +398,19 @@ function test_partridge ()
 
 	local L = { items = {}, options = {} }	-- our problem
 
-	for k = 1, n do 
+	for k = 1, n do L.items[ v {k} ] = { isprimary = true, atleast = k, atmost = k } end
 
-		L.items[ v {k} ] = { isprimary = true, atleast = k, atmost = k }
+	for i = 0, N - 1 do for j = 0, N - 1 do L.items[ p {i, j} ] = { isprimary = true } end end
 
-		for i = 0, N - k do for j = 0, N - k do
+	for k = 1, n do for i = 0, N - k do for j = 0, N - k do
 
-			local option = { v {k} }
+		local option = { v {k} }
 
-			for u = 0, k - 1 do for r = 0, k - 1 do
-				L.items[ p {i + u, j + r} ] = { isprimary = true }
+		for u = 0, k - 1 do for r = 0, k - 1 do table.insert(option, p {i + u, j + r}) end end
 
-				table.insert(option, p {i + u, j + r})
-			end end
+		table.insert(L.options, option) 
 
-			table.insert(L.options, option) 
-		end end 
-	end
+	end end end
 
 	local solver = ec.solver (L, true)
 

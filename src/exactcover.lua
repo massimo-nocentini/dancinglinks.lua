@@ -497,6 +497,7 @@ function dl.solver (P, expand_multiplicities)
 					index = nil,
 					nextoption = opt,
 				})
+				connecth (item)
 
 				goto M8
 
