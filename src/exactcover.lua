@@ -19,16 +19,10 @@ local function loop (start, toward, f, inclusive)
 
 	if inclusive then
 		local each = start
-		repeat 
-			local v = f (each) 
-			if v then return v else each = toward[each] end
-		until each == start
+		repeat f (each); each = toward[each] until each == start
 	else
 		local each = toward[start]
-		while each ~= start do --f (each); each = toward[each]
-			local v = f (each)
-			if v then return v else each = toward[each] end
-		end
+		while each ~= start do f (each); each = toward[each] end
 	end
 end
 
@@ -40,9 +34,8 @@ function dl.solver (P, expand_multiplicities)
 		{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
 
 	local primary_header = {}
-	local last_primary_item = primary_header	-- cursor variable for primary items.
 
-	local primarysize, secondarysize = 0, 0
+	local primarysize, secondarysize = 0, 0		-- items counts.
 
 	local function addprimary (last_primary_item, mitem)
 
@@ -68,13 +61,13 @@ function dl.solver (P, expand_multiplicities)
 		return mitem
 	end
 
+	local last_primary_item = primary_header	-- cursor variable for primary items.
+
 	for item, descriptor in pairs(P.items) do	-- link primary items
 
 		if descriptor.isprimary then
 
-			local u, v = descriptor.atleast or 1, descriptor.atmost or 1
-			assert (u >= 0 and v > 0 and v >= u)
-			slack[item], bound[item] = v - u, v
+			local u, v = descriptor.atleast or 1, descriptor.atmost or 1; assert (u >= 0 and v > 0 and v >= u)
 
 			if expand_multiplicities and v > 1 then
 				
@@ -84,6 +77,7 @@ function dl.solver (P, expand_multiplicities)
 					local mitem = obase { item, i }		-- link `mitem` as a primary item.
 
 					mul[i] = mitem
+					slack[mitem], bound[mitem] = 0, 1
 
 					last_primary_item = addprimary (last_primary_item, mitem)
 				end
@@ -98,7 +92,10 @@ function dl.solver (P, expand_multiplicities)
 
 				multiplicities[item] = mul
 
-			else last_primary_item = addprimary (last_primary_item, item) end
+			else 
+				slack[item], bound[item] = v - u, v
+				last_primary_item = addprimary (last_primary_item, item) 
+			end
 		else addsecondary (item) end
 	end
 
@@ -176,7 +173,7 @@ function dl.solver (P, expand_multiplicities)
 				ulink[point], ulink[o] = q, point
 				dlink[point], dlink[q] = o, point
 
-				llink[point], rlink[last]  = last, point
+				llink[point], rlink[last] = last, point
 				last = point
 			end
 
@@ -193,7 +190,10 @@ function dl.solver (P, expand_multiplicities)
 
 	local function iscovered () return rlink[primary_header] == primary_header end
 
-	local function hashandledcolor (q) return color[q] == handledcolor end
+	local function hashandledcolor (q) 
+		local c = color[q]; assert (c)
+		return c == handledcolor 
+	end
 
 	local function branch (each) return monus (len[each] + 1, monus (bound[each], slack[each])) end
 		
@@ -251,7 +251,6 @@ function dl.solver (P, expand_multiplicities)
 
 		if hashandledcolor (q) then return end
 
-
 		local x = top[q]
 		len[x] = len[x] - 1 
 
@@ -261,9 +260,10 @@ function dl.solver (P, expand_multiplicities)
 	local function hide (p) return loop (p, rlink, H) end
 
 	local function purify (p, c)
-		return loop (top[p], dlink, function (q)
-			if color[q] == c then color[q] = handledcolor else hide (q) end
-		end)
+
+		local function P (q) if color[q] == c then color[q] = handledcolor else hide (q) end end
+
+		return loop (top[p], dlink, P)
 	end
 
 	local function cover (i)
@@ -273,7 +273,8 @@ function dl.solver (P, expand_multiplicities)
 
 	local function commit (i, p)
 		local c = color[p]
-		if c == nocolor then return cover (i) elseif c ~= handledcolor then return purify (p, c) end
+		if c == nocolor then return cover (i) 
+		elseif c ~= handledcolor then return purify (p, c) end
 	end
 
 	local function covertop (p) return cover (top[p]) end
@@ -305,8 +306,9 @@ function dl.solver (P, expand_multiplicities)
 
 	local function unpurify (p, c)
 
-		return loop (top[p], ulink, function (q)
-			if hashandledcolor (q) then color[q] = c else unhide (q) end end)
+		local function UP (q) if hashandledcolor (q) then color[q] = c else unhide (q) end end
+
+		return loop (top[p], ulink, UP)
 	end
 
 	local function uncover (i)
@@ -317,7 +319,8 @@ function dl.solver (P, expand_multiplicities)
 
 	local function uncommit (i, p)
 		local c = color[p]
-		if c == nocolor then return uncover (i) elseif c ~= handledcolor then return unpurify (p, c) end
+		if c == nocolor then return uncover (i) 
+		elseif c ~= handledcolor then return unpurify (p, c) end
 	end
 
 	local function uncovertop (p) return uncover (top[p]) end
@@ -388,7 +391,7 @@ function dl.solver (P, expand_multiplicities)
 
 	------------------------------------------------------------------------------
 
-	local function R (l, opt, C, U, memo)	
+	local function R (l, opt, C, U, memo)
 
 		if iscovered () then 
 
@@ -538,44 +541,5 @@ function dl.indexed(name)
 	end	
 end
 
-function dl.expand_multiplicities(P, base)
-
-
-	local t = base { os.tmpname () }
-	
-	P.items[t] = { isprimary = false }
-
-	--for _, descriptor in ipairs (...) do
-
-		local start = descriptor.atleast or 1
-		local items = {}
-
-		for i = 1, start do
-			local item = base { key, i } 
-			P.items[item] = {isprimary = true}
-			table.insert (items, item)
-		end
-
-		for i = start + 1, descriptor.atmost or start do
-			local item = base { key, i } 
-			P.items[item] = {isprimary = false}
-			table.insert (items, item)
-		end
-
-		for _, item in ipairs (items) do
-			local opt = { t }
-
-			for k, v in pairs (option) do
-				if k == descriptor.key then opt[item] = v
-				elseif v == descriptor.key then opt[k] = item
-				else opt[k] = v end
-			end
-
-			table.insert(P.options, opt)
-		end
-
-	--end
-
-end
 
 return dl
