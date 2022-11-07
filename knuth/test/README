@@ -1,0 +1,8 @@
+ctangle redrect-dlx.w
+gcc redrect-dlx.c -o redrect-dlx
+redrect-dlx.w:29:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
+   29 | main(int argc,char*argv[]) {
+      | ^~~~
+./redrect-dlx 4 4 | ../src/dlx3
+(100 options, 42+0 items, 820 entries successfully read)
+Altogether 55137 solutions, 27009+51854446 mems, 2114106 updates, 0 cleansings, 14996 bytes, 633827 nodes.
