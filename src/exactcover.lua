@@ -241,8 +241,8 @@ function dl.solver (P, expand_multiplicities)
 
 	local function nextitem_knuth ()
 
-		local score, best_s, best_l, p = math.huge, math.huge, -1, math.huge
-		local best_i
+		local score, best_s, best_l = math.huge, math.huge, -1
+		local pool = {}
 
 		loop (primary_header, rlink, function (item) 
 			local s, b, l = slack[item], bound[item], len[item]
@@ -251,16 +251,16 @@ function dl.solver (P, expand_multiplicities)
 			if t <= score then
 				if t < score or s < best_s or (s == best_s and l > best_l) then
 					score = t
-					best_i = item
+					pool = {item}
 					best_s = s
 					best_l = l
-					p = 1
-				elseif s == best_s and l == best_l then
-					p = p + 1
-					if math.random(p) == 1 then best_i = item end
-				end
+				elseif s == best_s and l == best_l then table.insert (pool, item) end
 			end
 		end)
+
+		local best_i
+		local l = #pool
+		if l > 0 then best_i = pool[math.random(l)] end
 
 		return best_i, score
 	end
@@ -644,37 +644,14 @@ function dl.solver (P, expand_multiplicities)
 
 			assert (iscovered ())
 
-			local sol, opt = {}, nil
+			local sol = {}
 
-			for k = start_level, level do
+			assert (#choice == level - 1)
 
+			for k = start_level, level - 1 do
 				local pp = choice[k]
-				--[[
-				local cc = itemof (pp)
-
-				local ft = first_tweak[k]
-				if not ft then print_option (pp, dlink[cc], scor[k])
-				else print_option (pp, ft, scor[k]) end
-				]]
-
-				sol[k] = option[pp]
-
-				opt = { 
-					level = k,
-					point = pp,
-					index = option[pp],
-					nextoption = opt,
-				}
+			 	sol[k] = option[pp] 
 			end
-
-			--[[
-			local cpy = {} 
-			while opt do 
-				local i = opt.index
-				if i then table.insert (cpy, i) end
-				opt = opt.nextoption 
-			end
-			--]]
 
 			table.sort(sol)
 			coroutine.yield (sol)
@@ -731,7 +708,10 @@ function dl.solver (P, expand_multiplicities)
 	::backup::
 
 		if bound[best_itm] == 0 and slack[best_itm] == 0 then uncoverk (best_itm, true)
-		else untweakk (best_itm, first_tweak[level], bound[best_itm] > 0) end
+		else 
+			local ft = first_tweak[level]; assert (ft)
+			untweakk (best_itm, ft, bound[best_itm] > 0) 
+		end
 
 		bound[best_itm] = bound[best_itm] + 1
 
@@ -739,7 +719,6 @@ function dl.solver (P, expand_multiplicities)
 
 		if level == start_level then goto done end
 
-		-- before leaving level `level` just cleanup something.
 		choice[level] = nil
 		first_tweak[level] = nil
 
@@ -755,9 +734,13 @@ function dl.solver (P, expand_multiplicities)
 			goto backup
 		end
 
+		assert (cur_node ~= best_itm)
+
 		loop (cur_node, llink, function (pp)
+
 			local cc = top[pp]
 			local b = bound[cc]
+
 			if b then
 				if b == 0 then uncoverk (cc, true) end
 				bound[cc] = b + 1
