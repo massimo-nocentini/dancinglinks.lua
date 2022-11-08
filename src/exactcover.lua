@@ -190,11 +190,6 @@ function dl.solver (P, expand_multiplicities)
 
 	local function iscovered () return rlink[primary_header] == primary_header end
 
-	local function hashandledcolor (q) 
-		local c = color[q]; assert (c)
-		return c == handledcolor
-	end
-
 	local function isnode (i) return option[i] ~= nil end
 
 	local function itemof (i) if isnode (i) then return top[i] else return i end end
@@ -244,7 +239,7 @@ function dl.solver (P, expand_multiplicities)
 	end
 
 
-	local function nextitem_knuth (best_itm)
+	local function nextitem_knuth ()
 
 		local score, best_s, best_l, p = math.huge, math.huge, -1, math.huge
 		local best_i
@@ -267,7 +262,7 @@ function dl.solver (P, expand_multiplicities)
 			end
 		end)
 
-		return best_i or best_itm, score
+		return best_i, score
 	end
 
 	local function connectv (q) 
@@ -293,14 +288,18 @@ function dl.solver (P, expand_multiplicities)
 
 	local function purify (p, c)
 
-		local function P (q) if color[q] == c then color[q] = handledcolor else hide (q) end end
+		local function P (q) 
+			local r = color[q]; assert (r)
+			if r == c then color[q] = handledcolor 
+			elseif q ~= p then hide (q) end 
+		end
 
 		return loop (top[p], dlink, P)
 	end
 
 	local function cover (i)
+		disconnecth (i)
 		loop(i, dlink, hide)
-		return disconnecth (i)
 	end
 
 	local function commit (i, p)
@@ -353,7 +352,11 @@ function dl.solver (P, expand_multiplicities)
 
 	local function unpurify (p, c)
 
-		local function UP (q) if hashandledcolor (q) then color[q] = c else unhide (q) end end
+		local function UP (q) 
+			local r = color[q]; assert (r)
+			if r == handledcolor then color[q] = c 
+			elseif q ~= p then unhide (q) end 
+		end
 
 		return loop (top[p], ulink, UP)
 	end
@@ -396,7 +399,7 @@ function dl.solver (P, expand_multiplicities)
 		local cc, x = top[p], color[p]; assert (x)
 
 		loop (cc, ulink, function (rr)
-			if color[rr] then color[rr] = x
+			if color[rr] == handledcolor then color[rr] = x
 			elseif rr ~= p then loop (rr, llink, U) end
 		end)
 	end
@@ -412,7 +415,7 @@ function dl.solver (P, expand_multiplicities)
 
 	local function tweakh (p, x)
 		hide (x)
-		return tweakw (p, x) 
+		return tweakw (p, x)
 	end
 
 	local function tweak (p, x)
@@ -421,11 +424,12 @@ function dl.solver (P, expand_multiplicities)
 
 	local function tweakk (n, block)
 
-		local nn if block then nn = dlink[n] else nn = n end
+		local nn if block then nn = rlink[n] else nn = n end
 
 		while true do
+			
 			H (nn)
-			if nn == n then break else nn = dlink[nn] end
+			if nn == n then break else nn = rlink[nn] end
 		end
 	end
 
@@ -632,13 +636,15 @@ function dl.solver (P, expand_multiplicities)
 
 	::forward::
 
-		best_itm, score = nextitem_knuth (best_itm)
+		best_itm, score = nextitem_knuth ()
 
 		if score <= 0 then goto backdown end
 
 		if score == math.huge then
 
-			local opt
+			assert (iscovered ())
+
+			local sol, opt = {}, nil
 
 			for k = start_level, level do
 
@@ -651,6 +657,8 @@ function dl.solver (P, expand_multiplicities)
 				else print_option (pp, ft, scor[k]) end
 				]]
 
+				sol[k] = option[pp]
+
 				opt = { 
 					level = k,
 					point = pp,
@@ -659,26 +667,28 @@ function dl.solver (P, expand_multiplicities)
 				}
 			end
 
+			--[[
 			local cpy = {} 
 			while opt do 
 				local i = opt.index
 				if i then table.insert (cpy, i) end
 				opt = opt.nextoption 
 			end
+			--]]
 
-			table.sort(cpy)
-			coroutine.yield (cpy)
+			table.sort(sol)
+			coroutine.yield (sol)
 
 			goto backdown
 		end
 
-		first_tweak[level] = nil
 		cur_node = dlink[best_itm]
 		choice[level] = cur_node
 
 		bound[best_itm] = bound[best_itm] - 1
 
 		if bound[best_itm] == 0 and slack[best_itm] == 0 then 
+			first_tweak[level] = nil
 			coverk (best_itm, true) 
 		else
 			first_tweak[level] = cur_node
@@ -687,7 +697,7 @@ function dl.solver (P, expand_multiplicities)
 
 	::advance::
 
-		assert (best_itm)
+		assert (best_itm and bound[best_itm])	-- `best_item` has to be a primary item.
 
 		if bound[best_itm] == 0 and slack[best_itm] == 0 then
 			if cur_node == best_itm then goto backup end
@@ -695,7 +705,7 @@ function dl.solver (P, expand_multiplicities)
 		elseif cur_node ~= best_itm then tweakk (cur_node, bound[best_itm] > 0)
 		elseif bound[best_itm] > 0 then disconnecth (best_itm) end
 
-		if isnode (cur_node) then
+		if cur_node ~= best_itm then
 
 			loop (cur_node, rlink, function (pp)
 				
@@ -729,11 +739,17 @@ function dl.solver (P, expand_multiplicities)
 
 		if level == start_level then goto done end
 
+		-- before leaving level `level` just cleanup something.
+		choice[level] = nil
+		first_tweak[level] = nil
+
 		level = level - 1
-		cur_node = choice[level] 
+
+		cur_node = choice[level]
 		best_itm = top[cur_node]
 
-		if not isnode (cur_node) then
+		if not best_itm then 
+			assert (not isnode (cur_node))
 			best_itm = cur_node
 			connecth (best_itm)
 			goto backup
@@ -767,8 +783,8 @@ function dl.solver (P, expand_multiplicities)
 	local mcc = coroutine.create (function () MCC (1, nil) end)
 	local knuth = coroutine.create (function () K (1) end)
 
-	return xcc, mcc
-	--return knuth, knuth
+	--return xcc, mcc
+	return knuth, knuth
 end
 
 function dl.indexed(name)
