@@ -2,12 +2,12 @@
 #define oo mems+= 2
 #define ooo mems+= 3
 #define O "%"
-#define mod %					\
+#define mod %
 
 #define max_level 500
 #define max_cols 10000
 #define max_nodes 100000000
-#define bufsize (9*max_cols+3)			\
+#define bufsize (9*max_cols+3)
 
 #define show_basics 1
 #define show_choices 2
@@ -15,18 +15,18 @@
 #define show_profile 128
 #define show_full_state 256
 #define show_tots 512
-#define show_warnings 1024			\
+#define show_warnings 1024
 
 #define len itm
-#define aux color				\
+#define aux color
 
-#define root 0					\
+#define root 0
 
-#define sanity_checking 0			\
+#define sanity_checking 0
 
-#define panic(m) {fprintf(stderr,""O"s!\n"O"d: "O".99s\n",m,p,buf) ;exit(-666) ;} \
+#define panic(m) {fprintf(stderr,""O"s!\n"O"d: "O".99s\n",m,p,buf) ;exit(-666) ;}
 
-#define infty 0x7fffffff			\
+#define infty 0x7fffffff
 
 /*2:*/
 #line 89 "dlx3.w"
@@ -393,7 +393,7 @@ void print_progress(void){
 /*:46*/
 #line 99 "dlx3.w"
 ;
-main(int argc,char*argv[]){
+int main(int argc,char*argv[]){
   register int cc,i,j,k,p,pp,q,r,s,t,
     cur_node,best_itm,stage,score,best_s,best_l;
   /*4:*/
@@ -694,8 +694,10 @@ main(int argc,char*argv[]){
      else fprintf(stderr," "O".8s("O"d)",cl[k].name,nd[k].len);
    }
    t= nd[k].len+s-cl[k].bound+1;
-   if (t<=score && t>1 && (o,cl[k].name[0]!='#')) t+=last_node;
-   if (t<=score) {
+#line 9 "dlx3-sharp.ch"
+   if(t<=score&&t> 1&&(o,cl[k].name[0]!='#'))t+= last_node;
+   if(t<=score){
+#line 1027 "dlx3.w"
      if(t<score||s<best_s||(s==best_s&&nd[k].len> best_l))
        score= t,best_itm= k,best_s= s,best_l= nd[k].len,p= 1;
      else if(s==best_s&&nd[k].len==best_l){
@@ -704,8 +706,10 @@ main(int argc,char*argv[]){
      }
    }
  }
- if (score>last_node && score<infty) score-=last_node; /* remove the bias */
+#line 15 "dlx3-sharp.ch"
+ if(score> last_node&&score<infty)score-= last_node;
  if((vbose&show_details)&&
+#line 1036 "dlx3.w"
     level<show_choices_max&&level>=maxl-show_choices_gap){
    if(score<infty)
      fprintf(stderr," branching on "O".8s("O"d)\n",cl[best_itm].name,score);
@@ -724,8 +728,6 @@ main(int argc,char*argv[]){
 #line 1046 "dlx3.w"
 
    {
-     fprintf(stdout, "found\n"); fflush (stdout); exit(0);
-
      if(shape_file){
        fprintf(shape_file,"sol\n");fflush(shape_file);
      }
