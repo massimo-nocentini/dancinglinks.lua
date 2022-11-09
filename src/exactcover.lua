@@ -100,6 +100,7 @@ function dl.solver (P, expand_multiplicities)
 	end
 
 	rlink[last_primary_item], llink[primary_header] = primary_header, last_primary_item	-- closing the doubly circular list.
+	last_primary_item = nil
 
 	local localoptions = {}
 
@@ -635,16 +636,31 @@ function dl.solver (P, expand_multiplicities)
 		local memo = {}
 		local choice, first_tweak = {}, {}
 		local best_itm, cur_node = nil, nil
-		local score
+		local score, pool, best_s, best_l  
 
 	::forward::
 
-		best_itm, score = nextitem_knuth ()
+		score = math.huge
+		pool = {}
+
+		loop (primary_header, rlink, function (item) 
+			local s, b, l = slack[item], bound[item], len[item]
+			if s > b then s = b end
+			local t = l + s - b + 1
+			if t <= score then
+				if t < score or s < best_s or (s == best_s and l > best_l) then
+					score = t
+					pool = {item}
+					best_s = s
+					best_l = l
+				elseif s == best_s and l == best_l then table.insert (pool, item) end
+			end
+		end)
 
 		if score <= 0 then goto backdown end
 
 		if score == math.huge then
-			print 'sol'
+
 			assert (iscovered ())
 
 			local sol = {}
@@ -666,6 +682,8 @@ function dl.solver (P, expand_multiplicities)
 
 			goto backdown
 		end
+
+		best_itm = pool[math.random(#pool)]
 
 		cur_node = dlink[best_itm]
 		choice[level] = cur_node

@@ -345,7 +345,7 @@ function test_partridge_options_n_equals_2 ()
 
 end
 
-function test_partridge ()
+function est_partridge ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -611,5 +611,43 @@ function test_mcc_simple_xcc_automatic ()
 	lu.assertNil (selection)
 end
 
+function test_prepare_dlx_partridge_file ()
+
+	local n = 8
+	local N = math.tointeger (n * (n + 1) / 2)
+
+	local p, v = ec.indexed('p'), ec.indexed('v')
+
+	local L = { items = {}, options = {} }	-- our problem
+
+	for k = 1, n do table.insert(L.items, k..'|#'..k) end
+
+	for i = 0, N - 1 do for j = 0, N - 1 do table.insert(L.items, i..','..j) end end
+
+	local items_str = ' '..table.concat (L.items, ' ')
+
+	for k = 1, n do 
+
+		for i = 0, N - k do for j = 0, N - k do
+
+			local option = { '#'..k }
+
+			for u = 0, k - 1 do for r = 0, k - 1 do
+				local str = (i + u) .. ',' .. (j + r)
+
+				table.insert (option, str)
+			end end
+
+			table.insert(L.options, ' '..table.concat(option, ' ')) 
+		end end 
+	end
+
+	local options_str = table.concat (L.options, '\n')
+
+	local file = io.open('partridge8.dlx', 'w+')
+	file:write ('| partridge_8\n', items_str, '\n', options_str, '\n')
+	file:close ()
+
+end
 
 os.exit( lu.LuaUnit.run() )

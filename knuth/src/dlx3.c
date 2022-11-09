@@ -26,7 +26,7 @@
 
 #define panic(m) {fprintf(stderr,""O"s!\n"O"d: "O".99s\n",m,p,buf) ;exit(-666) ;} \
 
-#define infty max_nodes				\
+#define infty 0x7fffffff			\
 
 /*2:*/
 #line 89 "dlx3.w"
@@ -694,7 +694,8 @@ main(int argc,char*argv[]){
      else fprintf(stderr," "O".8s("O"d)",cl[k].name,nd[k].len);
    }
    t= nd[k].len+s-cl[k].bound+1;
-   if(t<=score){
+   if (t<=score && t>1 && (o,cl[k].name[0]!='#')) t+=last_node;
+   if (t<=score) {
      if(t<score||s<best_s||(s==best_s&&nd[k].len> best_l))
        score= t,best_itm= k,best_s= s,best_l= nd[k].len,p= 1;
      else if(s==best_s&&nd[k].len==best_l){
@@ -703,6 +704,7 @@ main(int argc,char*argv[]){
      }
    }
  }
+ if (score>last_node && score<infty) score-=last_node; /* remove the bias */
  if((vbose&show_details)&&
     level<show_choices_max&&level>=maxl-show_choices_gap){
    if(score<infty)
@@ -722,6 +724,8 @@ main(int argc,char*argv[]){
 #line 1046 "dlx3.w"
 
    {
+     fprintf(stdout, "found\n"); fflush (stdout); exit(0);
+
      if(shape_file){
        fprintf(shape_file,"sol\n");fflush(shape_file);
      }
