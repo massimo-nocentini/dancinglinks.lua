@@ -620,25 +620,25 @@ function test_prepare_dlx_partridge_file ()
 
 	local L = { items = {}, options = {} }	-- our problem
 
-	for k = 1, n do table.insert(L.items, k..'|#'..k) end
+	for k = 1, n do table.insert(L.items, k..'|'..k) end
 
-	for i = 0, N - 1 do for j = 0, N - 1 do table.insert(L.items, i..','..j) end end
+	for i = 0, N - 1 do for j = 0, N - 1 do table.insert(L.items, string.format('%02d%02d', i, j)) end end
 
-	local items_str = ' '..table.concat (L.items, ' ')
+	local items_str = table.concat (L.items, ' ')
 
 	for k = 1, n do 
 
 		for i = 0, N - k do for j = 0, N - k do
 
-			local option = { '#'..k }
+			local option = { ''..k }
 
 			for u = 0, k - 1 do for r = 0, k - 1 do
-				local str = (i + u) .. ',' .. (j + r)
+				local str = string.format('%02d%02d', i + u, j + r)
 
 				table.insert (option, str)
 			end end
 
-			table.insert(L.options, ' '..table.concat(option, ' ')) 
+			table.insert(L.options, table.concat(option, ' ')) 
 		end end 
 	end
 
