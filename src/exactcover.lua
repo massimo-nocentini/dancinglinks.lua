@@ -326,7 +326,8 @@ function dl.solver (P, expand_multiplicities)
 
 		if deact then disconnecth (c) end
 
-		loop (c, dlink, function (rr) loop (rr, rlink, H) end)
+		--loop (c, dlink, function (rr) loop (rr, rlink, H) end)
+		loop (c, dlink, hide)
 	end
 
 	local function purifyk (p)
@@ -336,7 +337,8 @@ function dl.solver (P, expand_multiplicities)
 		
 		loop (cc, dlink, function (rr)
 
-			if color[rr] ~= x then loop (rr, rlink, H)
+			--if color[rr] ~= x then loop (rr, rlink, H)
+			if color[rr] ~= x then hide (rr)
 			elseif rr ~= p then color[rr] = handledcolor end
 		end)
 	end
@@ -462,7 +464,7 @@ function dl.solver (P, expand_multiplicities)
 
 	local function untweakh (a) return untweakf (a, unhide) end
 	local function untweakw (a) return uncover (untweakf (a, noop)) end
-	local function untweak (a) 
+	local function untweak (a)
 		local item = top[a]
 		if bound[item] == 0 then return untweakw (a) else return untweakh (a) end 
 	end
@@ -630,6 +632,7 @@ function dl.solver (P, expand_multiplicities)
 	local function K (start_level)
 
 		local level = start_level
+		local memo = {}
 		local choice, first_tweak = {}, {}
 		local best_itm, cur_node = nil, nil
 		local score
@@ -641,7 +644,7 @@ function dl.solver (P, expand_multiplicities)
 		if score <= 0 then goto backdown end
 
 		if score == math.huge then
-
+			print 'sol'
 			assert (iscovered ())
 
 			local sol = {}
@@ -654,7 +657,12 @@ function dl.solver (P, expand_multiplicities)
 			end
 
 			table.sort(sol)
-			coroutine.yield (sol)
+
+			local digest = table.concat (sol, ' ')
+			if not memo[digest] then
+				memo[digest] = sol
+				coroutine.yield (sol)
+			end
 
 			goto backdown
 		end
