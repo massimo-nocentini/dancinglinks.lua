@@ -2,12 +2,12 @@
 #define oo mems+= 2
 #define ooo mems+= 3
 #define O "%"
-#define mod %
+#define mod %					\
 
 #define max_level 500
 #define max_cols 10000
 #define max_nodes 100000000
-#define bufsize (9*max_cols+3)
+#define bufsize (9*max_cols+3)			\
 
 #define show_basics 1
 #define show_choices 2
@@ -15,18 +15,18 @@
 #define show_profile 128
 #define show_full_state 256
 #define show_tots 512
-#define show_warnings 1024
+#define show_warnings 1024			\
 
 #define len itm
-#define aux color
+#define aux color				\
 
-#define root 0
+#define root 0					\
 
-#define sanity_checking 0
+#define sanity_checking 0			\
 
-#define panic(m) {fprintf(stderr,""O"s!\n"O"d: "O".99s\n",m,p,buf) ;exit(-666) ;}
+#define panic(m) {fprintf(stderr,""O"s!\n"O"d: "O".99s\n",m,p,buf) ;exit(-666) ;} \
 
-#define infty 0x7fffffff
+#define infty 0x7fffffff			\
 
 /*2:*/
 #line 89 "dlx3.w"
@@ -393,7 +393,7 @@ void print_progress(void){
 /*:46*/
 #line 99 "dlx3.w"
 ;
-int main(int argc,char*argv[]){
+main(int argc,char*argv[]){
   register int cc,i,j,k,p,pp,q,r,s,t,
     cur_node,best_itm,stage,score,best_s,best_l;
   /*4:*/
