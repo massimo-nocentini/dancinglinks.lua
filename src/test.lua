@@ -611,6 +611,24 @@ function test_mcc_simple_xcc_automatic ()
 	lu.assertNil (selection)
 end
 
+local function shuffle (tbl)
+
+	local aux, n = {}, #tbl
+
+	while n > 0 do
+		local v = table.remove (tbl, math.random (n))
+		aux[n] = v
+		n = n - 1
+	end
+
+	assert (#tbl == 0)
+
+	for i, v in pairs (aux) do
+		tbl[i] = v
+	end
+end
+
+
 function test_prepare_dlx_partridge_file ()
 
 	local n = 8
@@ -622,7 +640,7 @@ function test_prepare_dlx_partridge_file ()
 
 	for k = 1, n do table.insert(L.items, k..'|'..k) end
 
-	for i = 0, N - 1 do for j = 0, N - 1 do table.insert(L.items, string.format('%02d%02d', i, j)) end end
+	for i = 0, N - 1 do for j = 0, N - 1 do table.insert(L.items, string.format('x%dy%d', i, j)) end end
 
 	local items_str = table.concat (L.items, ' ')
 
@@ -633,7 +651,7 @@ function test_prepare_dlx_partridge_file ()
 			local option = { ''..k }
 
 			for u = 0, k - 1 do for r = 0, k - 1 do
-				local str = string.format('%02d%02d', i + u, j + r)
+				local str = string.format('x%dy%d', i + u, j + r)
 
 				table.insert (option, str)
 			end end
@@ -641,6 +659,8 @@ function test_prepare_dlx_partridge_file ()
 			table.insert(L.options, table.concat(option, ' ')) 
 		end end 
 	end
+	
+	shuffle (L.options)
 
 	local options_str = table.concat (L.options, '\n')
 

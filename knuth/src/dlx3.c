@@ -393,7 +393,7 @@ void print_progress(void){
 /*:46*/
 #line 99 "dlx3.w"
 ;
-main(int argc,char*argv[]){
+int main(int argc,char*argv[]){
   register int cc,i,j,k,p,pp,q,r,s,t,
     cur_node,best_itm,stage,score,best_s,best_l;
   /*4:*/

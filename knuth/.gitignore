@@ -1,3 +1,4 @@
 
 src/dlx3
-test/redrect-dlx
+test/redrect/redrect-dlx
+test/partridge/partridge-dlx
