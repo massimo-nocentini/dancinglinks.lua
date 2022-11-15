@@ -1,6 +1,6 @@
 
 dlx2:
-	gcc -I/usr/local/sgb/include/ -Wall -g dlx2.c -o dlx2 -lgb
+	gcc -I/usr/local/sgb/include/ -Wall -O2 dlx2.c -o dlx2 -lgb
 
 tangle:
 	/usr/local/bin/ctangle dlx2.w 

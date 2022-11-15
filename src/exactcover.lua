@@ -1,6 +1,29 @@
 
 local dl = {}
 
+function dl.shuffle (tbl)
+
+	local aux, n = {}, #tbl
+
+	while n > 0 do
+		local v = table.remove (tbl, math.random (n))
+		aux[n] = v
+		n = n - 1
+	end
+
+	assert (#tbl == 0)
+
+	for i, v in pairs (aux) do
+		tbl[i] = v
+	end
+end
+
+function dl.random_string ()
+	local s = os.tmpname ()
+	local i = string.find (s, '_', 1, true)
+	return string.sub (s, i + 1)
+end
+
 local function disconnect (q, rel, irel) 
 	local u, d = rel[q], irel[q]
 	rel[d], irel[u] = u, d
@@ -28,7 +51,7 @@ end
 
 function dl.solver (P, expand_multiplicities)
 
-	local obase = dl.indexed (os.tmpname ())
+	local obase = dl.indexed (dl.random_string ())
 
 	local llink, rlink, ulink, dlink, len, top, option, color, slack, bound, multiplicities = 
 		{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
@@ -36,6 +59,7 @@ function dl.solver (P, expand_multiplicities)
 	local primary_header = {}
 
 	local primarysize, secondarysize = 0, 0		-- items counts.
+	local primary_str, secondary_str = {}, {}
 
 	local function addprimary (last_primary_item, mitem)
 
@@ -45,6 +69,8 @@ function dl.solver (P, expand_multiplicities)
 		llink[mitem], rlink[last_primary_item] = last_primary_item, mitem	-- link among the horizontal dimension.
 
 		primarysize = primarysize + 1
+
+		table.insert (primary_str, mitem)
 
 		return mitem
 	end
@@ -58,6 +84,8 @@ function dl.solver (P, expand_multiplicities)
 
 		secondarysize = secondarysize + 1
 
+		table.insert (secondary_str, mitem)
+
 		return mitem
 	end
 
@@ -66,6 +94,7 @@ function dl.solver (P, expand_multiplicities)
 	for item, descriptor in pairs(P.items) do	-- link primary items
 
 		if descriptor.isprimary then
+
 
 			local u, v = descriptor.atleast or 1, descriptor.atmost or 1; assert (u >= 0 and v > 0 and v >= u)
 
@@ -137,7 +166,7 @@ function dl.solver (P, expand_multiplicities)
 
 		if #localopt > 1 then
 
-			local item = obase { iopt, os.tmpname () }
+			local item = obase { iopt, dl.random_string () }
 
 			addsecondary (item)
 
@@ -149,7 +178,7 @@ function dl.solver (P, expand_multiplicities)
 		localoptions[{index = iopt}] = localopt		-- using a table as a key is a kind of randomization.
 	end
 
-	local optionssize = 0
+	local optionssize, options_str = 0, {}
 
 	for key, mopt in pairs(localoptions) do
 
@@ -162,13 +191,19 @@ function dl.solver (P, expand_multiplicities)
 			local header = {}
 			local last = header
 
-			for o, decoration in pairs(opt) do
+			local opt_str = {}
 
+			for o, decoration in pairs(opt) do
+			
 				len[o] = len[o] + 1
 
 				local point = {}	-- every single 1 in the model matrix.
 
 				top[point], option[point], color[point] = o, iopt, decoration.color or nocolor
+
+				local s = o
+				if color[point] ~= nocolor then s = s .. ':' .. color[point] end
+				table.insert (opt_str, s)
 
 				local q = ulink[o]
 				ulink[point], ulink[o] = q, point
@@ -178,12 +213,21 @@ function dl.solver (P, expand_multiplicities)
 				last = point
 			end
 
+			table.insert (options_str, table.concat (opt_str, ' '))
+
 			assert (not llink[header])
 			local first = rlink[header]
 			rlink[header] = nil
 			rlink[last], llink[first]  = first, last
 		end
 	end
+
+	local items_str = table.concat (primary_str, ' ') .. ' | ' .. table.concat (secondary_str, ' ')
+	dl.shuffle (options_str)
+	options_str = table.concat (options_str, '\n')
+	local f = io.open ('partridge-8-xcc.dlx', 'w+')
+	f:write (items_str, '\n', options_str, '\n')
+	f:close ()
 
 	P.primarysize, P.secondarysize, P.optionssize = primarysize, secondarysize, optionssize	-- update the given problem, in place.
 

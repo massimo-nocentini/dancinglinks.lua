@@ -4,6 +4,9 @@
 #define O "%"
 #define mod %					\
 
+#define max_item_name 50
+#define max_item_name_str "50"
+
 #define max_level 5000
 #define max_cols 100000
 #define max_nodes 10000000
@@ -49,7 +52,7 @@ typedef struct node_struct{
 #line 296 "dlx2.w"
 
 typedef struct itm_struct{
-  char name[8];
+  char name[max_item_name];
   int prev,next;
 }item;
 
@@ -112,7 +115,7 @@ void print_option(int p,FILE*stream){
     return;
   }
   for(q= p;;){
-    fprintf(stream," "O".8s",cl[nd[q].itm].name);
+    fprintf(stream," "O"."max_item_name_str"s",cl[nd[q].itm].name);
     if(nd[q].color)
       fprintf(stream,":"O"c",nd[q].color> 0?nd[q].color:nd[nd[q].itm].color);
     q++;
@@ -141,9 +144,8 @@ void print_itm(int c){
     return;
   }
   if(c<second)
-    fprintf(stderr,"Item "O".8s, length "O"d, neighbors "O".8s and "O".8s:\n",
-	    cl[c].name,nd[c].len,cl[cl[c].prev].name,cl[cl[c].next].name);
-  else fprintf(stderr,"Item "O".8s, length "O"d:\n",cl[c].name,nd[c].len);
+    fprintf(stderr,"Item "O"."max_item_name_str"s, length "O"d, neighbors "O"."max_item_name_str"s and "O"."max_item_name_str"s:\n", cl[c].name,nd[c].len,cl[cl[c].prev].name,cl[cl[c].next].name);
+  else fprintf(stderr,"Item "O"."max_item_name_str"s, length "O"d:\n",cl[c].name,nd[c].len);
   for(p= nd[c].down;p>=last_itm;p= nd[p].down)prow(p);
 }
 
@@ -153,8 +155,7 @@ void print_itm(int c){
 void sanity(void){
   register int k,p,q,pp,qq,t;
   for(q= root,p= cl[q].next;;q= p,p= cl[p].next){
-    if(cl[p].prev!=q)fprintf(stderr,"Bad prev field at itm "O".8s!\n",
-			     cl[p].name);
+    if(cl[p].prev!=q)fprintf(stderr,"Bad prev field at itm "O"."max_item_name_str"s!\n", cl[p].name);
     if(p==root)break;
     /*13:*/
 #line 378 "dlx2.w"
@@ -164,8 +165,7 @@ void sanity(void){
       if(pp==p)break;
       if(nd[pp].itm!=p)fprintf(stderr,"Bad itm field at node "O"d!\n",pp);
     }
-    if(nd[p].len!=k)fprintf(stderr,"Bad len field in item "O".8s!\n",
-			    cl[p].name);
+    if(nd[p].len!=k)fprintf(stderr,"Bad len field in item "O"."max_item_name_str"s!\n", cl[p].name);
 
     /*:13*/
 #line 374 "dlx2.w"
@@ -373,16 +373,16 @@ main(int argc,char*argv[]){
   }
   if(!last_itm)panic("No items");
   for(;o,buf[p];){
-    for(j= 0;j<8&&(o,!isspace(buf[p+j]));j++){
+    for(j= 0;j<max_item_name&&(o,!isspace(buf[p+j]));j++){
       if(buf[p+j]==':'||buf[p+j]=='|')
 	panic("Illegal character in item name");
       o,cl[last_itm].name[j]= buf[p+j];
     }
-    if(j==8&&!isspace(buf[p+j]))panic("Item name too long");
+    if(j==max_item_name&&!isspace(buf[p+j]))panic("Item name too long");
     /*15:*/
 #line 430 "dlx2.w"
 
-    for(k= 1;o,strncmp(cl[k].name,cl[last_itm].name,8);k++);
+    for(k= 1;o,strncmp(cl[k].name,cl[last_itm].name,max_item_name);k++);
     if(k<last_itm)panic("Duplicate item name");
 
     /*:15*/
@@ -428,16 +428,16 @@ main(int argc,char*argv[]){
     if(buf[p]=='|'||!buf[p])continue;
     i= last_node;
     for(pp= 0;buf[p];){
-      for(j= 0;j<8&&(o,!isspace(buf[p+j]))&&buf[p+j]!=':';j++)
+      for(j= 0;j<max_item_name&&(o,!isspace(buf[p+j]))&&buf[p+j]!=':';j++)
 	o,cl[last_itm].name[j]= buf[p+j];
       if(!j)panic("Empty item name");
-      if(j==8&&!isspace(buf[p+j])&&buf[p+j]!=':')
+      if(j==max_item_name&&!isspace(buf[p+j])&&buf[p+j]!=':')
 	panic("Item name too long");
-      if(j<8)o,cl[last_itm].name[j]= '\0';
+      if(j<max_item_name)o,cl[last_itm].name[j]= '\0';
       /*18:*/
 #line 485 "dlx2.w"
 
-      for(k= 0;o,strncmp(cl[k].name,cl[last_itm].name,8);k++);
+      for(k= 0;o,strncmp(cl[k].name,cl[last_itm].name,max_item_name);k++);
       if(k==last_itm)panic("Unknown item name");
       if(o,nd[k].aux>=i)panic("Duplicate item name in this option");
       last_node++;
@@ -566,7 +566,7 @@ main(int argc,char*argv[]){
  for(o,k= cl[root].next;t&&k!=root;o,k= cl[k].next){
    if((vbose&show_details)&&
       level<show_choices_max&&level>=maxl-show_choices_gap)
-     fprintf(stderr," "O".8s("O"d)",cl[k].name,nd[k].len);
+     fprintf(stderr," "O"."max_item_name_str"s("O"d)",cl[k].name,nd[k].len);
    if(o,nd[k].len<=t){
      if(nd[k].len<t)best_itm= k,t= nd[k].len,p= 1;
      else{
@@ -577,9 +577,9 @@ main(int argc,char*argv[]){
  }
  if((vbose&show_details)&&
     level<show_choices_max&&level>=maxl-show_choices_gap)
-   fprintf(stderr," branching on "O".8s("O"d)\n",cl[best_itm].name,t);
+   fprintf(stderr," branching on "O"."max_item_name_str"s("O"d)\n",cl[best_itm].name,t);
  if(shape_file){
-   fprintf(shape_file,""O"d "O".8s\n",t,cl[best_itm].name);
+   fprintf(shape_file,""O"d "O"."max_item_name_str"s\n",t,cl[best_itm].name);
    fflush(shape_file);
  }
 

@@ -2,6 +2,7 @@
 local lu = require 'luaunit'
 local ec = require 'exactcover'
 
+
 function test_matrix ()
 
 	local v = ec.indexed('v')
@@ -389,7 +390,7 @@ function est_partridge ()
 
 end
 
-function est_partridge_xcc ()
+function test_partridge_xcc ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -433,6 +434,8 @@ function est_partridge_xcc ()
 	lu.assertItemsEquals (sol, {})
 
 end
+
+test_partridge_xcc ()
 
 function test_mcc_simple ()
 
@@ -480,7 +483,7 @@ function test_mcc_simple_xcc_manual ()
 
 	local L = { items = {}, options = {} }
 
-	local t, w, s = os.tmpname (), os.tmpname (), os.tmpname ()
+	local t, w, s = ec.random_string (), ec.random_string (), ec.random_string ()
 
 	L.items[ v {'a'} ] = { isprimary = true } 
 	L.items[ v {'b'} ] = { isprimary = true } 
@@ -611,22 +614,6 @@ function test_mcc_simple_xcc_automatic ()
 	lu.assertNil (selection)
 end
 
-local function shuffle (tbl)
-
-	local aux, n = {}, #tbl
-
-	while n > 0 do
-		local v = table.remove (tbl, math.random (n))
-		aux[n] = v
-		n = n - 1
-	end
-
-	assert (#tbl == 0)
-
-	for i, v in pairs (aux) do
-		tbl[i] = v
-	end
-end
 
 
 function test_prepare_dlx_partridge_file ()
