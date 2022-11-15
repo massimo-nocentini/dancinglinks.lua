@@ -390,7 +390,7 @@ function est_partridge ()
 
 end
 
-function test_partridge_xcc ()
+function est_partridge_xcc ()
 
 	local n = 8
 	local N = math.tointeger(n * (n + 1) / 2)
@@ -434,8 +434,6 @@ function test_partridge_xcc ()
 	lu.assertItemsEquals (sol, {})
 
 end
-
-test_partridge_xcc ()
 
 function test_mcc_simple ()
 
@@ -614,7 +612,8 @@ function test_mcc_simple_xcc_automatic ()
 	lu.assertNil (selection)
 end
 
-
+test_mcc_simple_xcc_automatic ()
+assert (false)
 
 function test_prepare_dlx_partridge_file ()
 
@@ -647,7 +646,7 @@ function test_prepare_dlx_partridge_file ()
 		end end 
 	end
 	
-	shuffle (L.options)
+	ec.shuffle (L.options)
 
 	local options_str = table.concat (L.options, '\n')
 
