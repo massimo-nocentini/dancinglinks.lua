@@ -2,6 +2,7 @@
 local lu = require 'luaunit'
 local ec = require 'exactcover'
 
+
 function test_matrix ()
 
 	local v = ec.indexed('v')
@@ -480,7 +481,7 @@ function test_mcc_simple_xcc_manual ()
 
 	local L = { items = {}, options = {} }
 
-	local t, w, s = os.tmpname (), os.tmpname (), os.tmpname ()
+	local t, w, s = ec.random_string (), ec.random_string (), ec.random_string ()
 
 	L.items[ v {'a'} ] = { isprimary = true } 
 	L.items[ v {'b'} ] = { isprimary = true } 
@@ -611,23 +612,8 @@ function test_mcc_simple_xcc_automatic ()
 	lu.assertNil (selection)
 end
 
-local function shuffle (tbl)
-
-	local aux, n = {}, #tbl
-
-	while n > 0 do
-		local v = table.remove (tbl, math.random (n))
-		aux[n] = v
-		n = n - 1
-	end
-
-	assert (#tbl == 0)
-
-	for i, v in pairs (aux) do
-		tbl[i] = v
-	end
-end
-
+test_mcc_simple_xcc_automatic ()
+assert (false)
 
 function test_prepare_dlx_partridge_file ()
 
@@ -660,7 +646,7 @@ function test_prepare_dlx_partridge_file ()
 		end end 
 	end
 	
-	shuffle (L.options)
+	ec.shuffle (L.options)
 
 	local options_str = table.concat (L.options, '\n')
 
