@@ -1,5 +1,7 @@
 # exactcover.lua
 
+## Knuth's solvers
+
 Some solvers from [Knuth's program page](https://cs.stanford.edu/~knuth/programs.html):
 
 |solver|doc|comment|
@@ -11,4 +13,4 @@ Some solvers from [Knuth's program page](https://cs.stanford.edu/~knuth/programs
 
 ## Dependencies
 
-Just http://ftp.cs.stanford.edu/pub/sgb/sgb.tar.gz, use the `Makefile` (`make tests` and then `sudo make install`).
+Extract http://ftp.cs.stanford.edu/pub/sgb/sgb.tar.gz and then use the `Makefile`, so type `make tests` and then type `sudo make install`.
