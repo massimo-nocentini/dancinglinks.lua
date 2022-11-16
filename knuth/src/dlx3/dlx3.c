@@ -35,7 +35,7 @@
 #include <stdlib.h> 
 #include <string.h> 
 #include <ctype.h> 
-#include <gb_flip.h>
+#include "gb_flip.h"
 typedef unsigned int uint;
 typedef unsigned long long ullng;
 /*7:*/
@@ -393,7 +393,7 @@ void print_progress(void){
 /*:46*/
 #line 99 "dlx3.w"
 ;
-int main(int argc,char*argv[]){
+main(int argc,char*argv[]){
   register int cc,i,j,k,p,pp,q,r,s,t,
     cur_node,best_itm,stage,score,best_s,best_l;
   /*4:*/
