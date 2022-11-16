@@ -1,6 +1,6 @@
 # exactcover.lua
 
-Some solvers from Knuth's program page:
+Some solvers from [Knuth's program page](https://cs.stanford.edu/~knuth/programs.html):
 
 |solver|doc|comment|
 |---|---|---|
