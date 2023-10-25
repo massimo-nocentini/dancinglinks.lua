@@ -38,7 +38,7 @@
 			"label": "DLX - generate TeX sources && compile",
 			"type": "shell",
 			"linux": {
-				"command": "rm dlx1.idx dlx1.log dlx1.pdf dlx1.scn dlx1.toc && cweave dlx1.w && pdftex dlx1.tex"
+				"command": "rm -f dlx1.idx dlx1.log dlx1.pdf dlx1.scn dlx1.toc && cweave dlx1.w && pdftex dlx1.tex"
 			},
 			"group": "build",
 			"presentation": {
@@ -54,7 +54,7 @@
 			"type": "shell",
 			"linux": {
 				"command": [
-					"gcc -O3 -std=c17 -fPIC -Werror -Wall -shared -o libdlx1.so libdlx1.c"
+					"gcc -O3 -std=c17 -fPIC -Wall -shared -I/usr/local/sgb/include -o libdlx1.so libdlx1.c -lgb"
 				]
 			},
 			"group": "build",
