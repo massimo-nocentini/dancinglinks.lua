@@ -1,10 +1,23 @@
 
+
 #include <stdio.h>
+
+#define __USE_MISC 1
 #include <stdlib.h>
+
 #include <string.h>
 #include <ctype.h>
-#include "gb_flip.h"
 #include "dlx1.h"
+
+void gb_init_rand(long seed)
+{
+    srand48(seed);
+}
+
+__uint32_t gb_unif_rand(__uint32_t __upper_bound)
+{
+    return arc4random_uniform(__upper_bound);
+}
 
 void default_panic(dlxState_t DLX, char *m, int p)
 {
@@ -182,12 +195,13 @@ void print_progress(dlxState_t DLX)
     fprintf(stderr, " " O ".5f\n", f + 0.5 / fd);
 }
 
-;
 void dlx1(int argc, char *argv[], panic_t panic)
 {
     register int cc, i, j, k, p, pp, q, r, t, cur_node, best_itm;
 
     p = best_itm = 0;
+
+    printf("called \n");
 
     dlxState_t DLX;
 
@@ -276,16 +290,16 @@ void dlx1(int argc, char *argv[], panic_t panic)
         panic(DLX, "No items", p);
     for (; o, DLX.buf[p];)
     {
-        for (j = 0; j < 8 && (o, !isspace(DLX.buf[p + j])); j++)
+        for (j = 0; j < max_name_length && (o, !isspace(DLX.buf[p + j])); j++)
         {
             if (DLX.buf[p + j] == ':' || DLX.buf[p + j] == '|')
                 panic(DLX, "Illegal character in item name", p);
             o, DLX.cl[DLX.last_itm].name[j] = DLX.buf[p + j];
         }
-        if (j == 8 && !isspace(DLX.buf[p + j]))
+        if (j == max_name_length && !isspace(DLX.buf[p + j]))
             panic(DLX, "Item name too long", p);
 
-        for (k = 1; o, strncmp(DLX.cl[k].name, DLX.cl[DLX.last_itm].name, 8); k++)
+        for (k = 1; o, strncmp(DLX.cl[k].name, DLX.cl[DLX.last_itm].name, max_name_length); k++)
             ;
         if (k < DLX.last_itm)
             panic(DLX, "Duplicate item name", p);
@@ -334,14 +348,14 @@ void dlx1(int argc, char *argv[], panic_t panic)
         i = DLX.last_node;
         for (pp = 0; DLX.buf[p];)
         {
-            for (j = 0; j < 8 && (o, !isspace(DLX.buf[p + j])); j++)
+            for (j = 0; j < max_name_length && (o, !isspace(DLX.buf[p + j])); j++)
                 o, DLX.cl[DLX.last_itm].name[j] = DLX.buf[p + j];
-            if (j == 8 && !isspace(DLX.buf[p + j]))
+            if (j == max_name_length && !isspace(DLX.buf[p + j]))
                 panic(DLX, "Item name too long", p);
-            if (j < 8)
+            if (j < max_name_length)
                 o, DLX.cl[DLX.last_itm].name[j] = '\0';
 
-            for (k = 0; o, strncmp(DLX.cl[k].name, DLX.cl[DLX.last_itm].name, 8); k++)
+            for (k = 0; o, strncmp(DLX.cl[k].name, DLX.cl[DLX.last_itm].name, max_name_length); k++)
                 ;
             if (k == DLX.last_itm)
                 panic(DLX, "Unknown item name", p);

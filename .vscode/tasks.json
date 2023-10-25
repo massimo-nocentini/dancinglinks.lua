@@ -54,7 +54,7 @@
 			"type": "shell",
 			"linux": {
 				"command": [
-					"gcc -O3 -std=c17 -I/usr/local/sgb/include/ -Wall --shared -fPIC libdlx1.c -o libdlx1.so -lgb"
+					"gcc -O3 -std=c17 -fPIC -Werror -Wall -shared -o libdlx1.so libdlx1.c"
 				]
 			},
 			"group": "build",
@@ -67,11 +67,11 @@
 			}
 		},
 		{
-			"label": "DLX - install .h, .so and dlx1",
+			"label": "DLX - compile executable",
 			"type": "shell",
 			"linux": {
 				"command": [
-					"sudo cp dlx1.h /usr/local/include && sudo cp libdlx1.so /usr/local/lib "
+					"gcc -O3 -Wall dlx.c -o dlx -ldlx1"
 				]
 			},
 			"group": "build",
@@ -82,6 +82,33 @@
 			"options": {
 				"cwd": "knuth/src/dlx1"
 			}
+		},
+		{
+			"label": "DLX - install .h, .so and dlx",
+			"type": "shell",
+			"linux": {
+				"command": [
+					"sudo cp dlx1.h /usr/local/include && sudo cp libdlx1.so /usr/local/lib"
+				]
+			},
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "knuth/src/dlx1"
+			}
+		},
+		{
+			"label": "DLX - deploy",
+			"group": "build",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"DLX - compile shared library",
+				"DLX - compile executable",
+				"DLX - install .h, .so and dlx"
+			]
 		},
 		{
 			"label": "DLX - update CWEB file: queens-dlx.w",

@@ -25,6 +25,8 @@
 
 #define sanity_checking 0
 
+#define max_name_length 32
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,7 +43,7 @@ typedef struct node_struct
 
 typedef struct itm_struct
 {
-    char name[8];
+    char name[max_name_length];
     int prev, next;
 } item;
 

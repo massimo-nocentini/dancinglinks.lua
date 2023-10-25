@@ -4,6 +4,14 @@
         "typeinfo": "c",
         "chrono": "c",
         "algorithm": "c",
-        "format": "c"
+        "format": "c",
+        "dlx1.h": "c",
+        "stdlib.h": "c",
+        "cstdint": "c",
+        "immintrin.h": "c",
+        "ctype.h": "c",
+        "features.h": "c",
+        "string.h": "c",
+        "stdio.h": "c"
     }
 }
