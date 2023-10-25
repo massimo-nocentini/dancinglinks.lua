@@ -71,7 +71,7 @@
 			"type": "shell",
 			"linux": {
 				"command": [
-					"gcc -O3 -Wall dlx.c -o dlx -ldlx1"
+					"gcc -O3 -Wall -o dlx dlx.c  -ldlx1"
 				]
 			},
 			"group": "build",
