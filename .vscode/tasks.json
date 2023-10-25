@@ -1,0 +1,35 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "DLX - update CWEB files",
+			"type": "shell",
+			"linux": {
+				"command": "rm dlx1.w && wget https://cs.stanford.edu/~knuth/programs/dlx1.w"
+			},
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "knuth/src/dlx1"
+			}
+		},
+		{
+			"label": "DLX - generate C sources",
+			"type": "shell",
+			"linux": {
+				"command": "ctangle dlx1.w && gcc -O3 -I/usr/local/sgb/include/ -Wall dlx1.c -o dlx1 -lgb"
+			},
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "knuth/src/dlx1"
+			}
+		},
+	]
+}

@@ -4,7 +4,7 @@
 #define O "%"
 #define mod % \
 
-#define max_level 500
+#define max_level 10000
 #define max_cols 100000
 #define max_nodes 25000000
 #define bufsize (9*max_cols+3)  \
@@ -38,7 +38,7 @@
 typedef unsigned int uint;
 typedef unsigned long long ullng;
 /*6:*/
-#line 316 "dlx1.w"
+#line 318 "dlx1.w"
 
 typedef struct node_struct{
 int up,down;
@@ -47,7 +47,7 @@ int spare;
 }node;
 
 /*:6*//*7:*/
-#line 336 "dlx1.w"
+#line 338 "dlx1.w"
 
 typedef struct itm_struct{
 char name[8];
@@ -58,7 +58,7 @@ int prev,next;
 #line 116 "dlx1.w"
 ;
 /*3:*/
-#line 191 "dlx1.w"
+#line 193 "dlx1.w"
 
 int random_seed= 0;
 int randomizing;
@@ -72,12 +72,12 @@ int maxl= 0;
 char buf[bufsize];
 ullng count;
 ullng options;
-ullng imems,mems;
+ullng imems,mems,cmems,tmems;
 ullng updates;
 ullng bytes;
 ullng nodes;
-ullng thresh= 0;
-ullng delta= 0;
+ullng thresh= 10000000000;
+ullng delta= 10000000000;
 ullng maxcount= 0xffffffffffffffff;
 ullng timeout= 0x1fffffffffffffff;
 FILE*shape_file;
@@ -85,7 +85,7 @@ char*shape_name;
 int maxdeg;
 
 /*:3*//*8:*/
-#line 342 "dlx1.w"
+#line 344 "dlx1.w"
 
 node nd[max_nodes];
 int last_node;
@@ -94,7 +94,7 @@ int second= max_cols;
 int last_itm;
 
 /*:8*//*24:*/
-#line 622 "dlx1.w"
+#line 624 "dlx1.w"
 
 int level;
 int choice[max_level];
@@ -104,7 +104,7 @@ ullng profile[max_level];
 #line 117 "dlx1.w"
 ;
 /*10:*/
-#line 359 "dlx1.w"
+#line 361 "dlx1.w"
 
 void print_option(int p,FILE*stream){
 register int k,q;
@@ -131,7 +131,7 @@ print_option(p,stderr);
 }
 
 /*:10*//*11:*/
-#line 386 "dlx1.w"
+#line 388 "dlx1.w"
 
 void print_itm(int c){
 register int p;
@@ -147,7 +147,7 @@ for(p= nd[c].down;p>=last_itm;p= nd[p].down)prow(p);
 }
 
 /*:11*//*12:*/
-#line 405 "dlx1.w"
+#line 407 "dlx1.w"
 
 void sanity(void){
 register int k,p,q,pp,qq,t;
@@ -156,7 +156,7 @@ if(cl[p].prev!=q)fprintf(stderr,"Bad prev field at itm "O".8s!\n",
 cl[p].name);
 if(p==root)break;
 /*13:*/
-#line 416 "dlx1.w"
+#line 418 "dlx1.w"
 
 for(qq= p,pp= nd[qq].down,k= 0;;qq= pp,pp= nd[pp].down,k++){
 if(nd[pp].up!=qq)fprintf(stderr,"Bad up field at node "O"d!\n",pp);
@@ -167,13 +167,13 @@ if(nd[p].len!=k)fprintf(stderr,"Bad len field in item "O".8s!\n",
 cl[p].name);
 
 /*:13*/
-#line 412 "dlx1.w"
+#line 414 "dlx1.w"
 ;
 }
 }
 
 /*:12*//*26:*/
-#line 649 "dlx1.w"
+#line 651 "dlx1.w"
 
 void cover(int c){
 register int cc,l,r,rr,nn,uu,dd,t;
@@ -197,7 +197,7 @@ nn++;
 }
 
 /*:26*//*27:*/
-#line 680 "dlx1.w"
+#line 682 "dlx1.w"
 
 void uncover(int c){
 register int cc,l,r,rr,nn,uu,dd,t;
@@ -219,7 +219,7 @@ oo,cl[l].next= cl[r].prev= c;
 }
 
 /*:27*//*33:*/
-#line 785 "dlx1.w"
+#line 788 "dlx1.w"
 
 void print_state(void){
 register int l;
@@ -236,7 +236,7 @@ count,mems,maxl);
 }
 
 /*:33*//*34:*/
-#line 820 "dlx1.w"
+#line 823 "dlx1.w"
 
 void print_progress(void){
 register int l,k,d,c,p;
@@ -263,7 +263,7 @@ fprintf(stderr," "O".5f\n",f+0.5/fd);
 main(int argc,char*argv[]){
 register int cc,i,j,k,p,pp,q,r,t,cur_node,best_itm;
 /*4:*/
-#line 219 "dlx1.w"
+#line 221 "dlx1.w"
 
 for(j= argc-1,k= 0;j;j--)switch(argv[j][0]){
 case'v':k|= (sscanf(argv[j]+1,""O"d",&vbose)-1);break;
@@ -294,7 +294,7 @@ if(randomizing)gb_init_rand(random_seed);
 #line 121 "dlx1.w"
 ;
 /*14:*/
-#line 430 "dlx1.w"
+#line 432 "dlx1.w"
 
 if(max_nodes<=2*max_cols){
 fprintf(stderr,"Recompile me: max_nodes must exceed twice max_cols!\n");
@@ -317,16 +317,16 @@ o,cl[last_itm].name[j]= buf[p+j];
 }
 if(j==8&&!isspace(buf[p+j]))panic("Item name too long");
 /*15:*/
-#line 468 "dlx1.w"
+#line 470 "dlx1.w"
 
 for(k= 1;o,strncmp(cl[k].name,cl[last_itm].name,8);k++);
 if(k<last_itm)panic("Duplicate item name");
 
 /*:15*/
-#line 451 "dlx1.w"
+#line 453 "dlx1.w"
 ;
 /*16:*/
-#line 472 "dlx1.w"
+#line 474 "dlx1.w"
 
 if(last_itm> max_cols)panic("Too many items");
 oo,cl[last_itm-1].next= last_itm,cl[last_itm].prev= last_itm-1;
@@ -335,7 +335,7 @@ o,nd[last_itm].up= nd[last_itm].down= last_itm;
 last_itm++;
 
 /*:16*/
-#line 452 "dlx1.w"
+#line 454 "dlx1.w"
 ;
 for(p+= j+1;o,isspace(buf[p]);p++);
 if(buf[p]=='|'){
@@ -356,7 +356,7 @@ last_node= last_itm;
 #line 122 "dlx1.w"
 ;
 /*17:*/
-#line 482 "dlx1.w"
+#line 484 "dlx1.w"
 
 while(1){
 if(!fgets(buf,bufsize,stdin))break;
@@ -370,7 +370,7 @@ o,cl[last_itm].name[j]= buf[p+j];
 if(j==8&&!isspace(buf[p+j]))panic("Item name too long");
 if(j<8)o,cl[last_itm].name[j]= '\0';
 /*18:*/
-#line 514 "dlx1.w"
+#line 516 "dlx1.w"
 
 for(k= 0;o,strncmp(cl[k].name,cl[last_itm].name,8);k++);
 if(k==last_itm)panic("Unknown item name");
@@ -381,7 +381,7 @@ o,nd[last_node].itm= k;
 if(k<second)pp= 1;
 o,t= nd[k].len+1;
 /*19:*/
-#line 536 "dlx1.w"
+#line 538 "dlx1.w"
 
 o,nd[k].len= t;
 nd[k].aux= last_node;
@@ -396,11 +396,11 @@ o,nd[last_node].up= q,nd[last_node].down= r;
 }
 
 /*:19*/
-#line 523 "dlx1.w"
+#line 525 "dlx1.w"
 ;
 
 /*:18*/
-#line 494 "dlx1.w"
+#line 496 "dlx1.w"
 ;
 for(p+= j+1;o,isspace(buf[p]);p++);
 }
@@ -409,7 +409,7 @@ if(vbose&show_warnings)
 fprintf(stderr,"Option ignored (no primary items): "O"s",buf);
 while(last_node> i){
 /*20:*/
-#line 549 "dlx1.w"
+#line 551 "dlx1.w"
 
 o,k= nd[last_node].itm;
 oo,nd[k].len--,nd[k].aux= i-1;
@@ -417,7 +417,7 @@ o,q= nd[last_node].up,r= nd[last_node].down;
 oo,nd[q].down= r,nd[r].up= q;
 
 /*:20*/
-#line 501 "dlx1.w"
+#line 503 "dlx1.w"
 ;
 last_node--;
 }
@@ -436,7 +436,7 @@ o,nd[last_node].itm= -options;
 ;
 if(vbose&show_basics)
 /*21:*/
-#line 555 "dlx1.w"
+#line 557 "dlx1.w"
 
 fprintf(stderr,
 "("O"lld options, "O"d+"O"d items, "O"d entries successfully read)\n",
@@ -447,7 +447,7 @@ options,second-1,last_itm-second,last_node-last_itm);
 ;
 if(vbose&show_tots)
 /*22:*/
-#line 564 "dlx1.w"
+#line 566 "dlx1.w"
 
 {
 fprintf(stderr,"Item totals:");
@@ -463,14 +463,14 @@ fprintf(stderr,"\n");
 ;
 imems= mems,mems= 0;
 /*23:*/
-#line 591 "dlx1.w"
+#line 593 "dlx1.w"
 
 level= 0;
 forward:nodes++;
 if(vbose&show_profile)profile[level]++;
 if(sanity_checking)sanity();
 /*25:*/
-#line 627 "dlx1.w"
+#line 629 "dlx1.w"
 
 if(delta&&(mems>=thresh)){
 thresh+= delta;
@@ -482,16 +482,16 @@ fprintf(stderr,"TIMEOUT!\n");goto done;
 }
 
 /*:25*/
-#line 596 "dlx1.w"
+#line 598 "dlx1.w"
 ;
 /*30:*/
-#line 730 "dlx1.w"
+#line 732 "dlx1.w"
 
-t= max_nodes;
+tmems= mems,t= max_nodes;
 if((vbose&show_details)&&
 level<show_choices_max&&level>=maxl-show_choices_gap)
 fprintf(stderr,"Level "O"d:",level);
-for(o,k= cl[root].next;k!=root;o,k= cl[k].next){
+for(o,k= cl[root].next;t&&k!=root;o,k= cl[k].next){
 if((vbose&show_details)&&
 level<show_choices_max&&level>=maxl-show_choices_gap)
 fprintf(stderr," "O".8s("O"d)",cl[k].name,nd[k].len);
@@ -511,9 +511,10 @@ if(shape_file){
 fprintf(shape_file,""O"d "O".8s\n",t,cl[best_itm].name);
 fflush(shape_file);
 }
+cmems+= mems-tmems;
 
 /*:30*/
-#line 597 "dlx1.w"
+#line 599 "dlx1.w"
 ;
 cover(best_itm);
 oo,cur_node= choice[level]= nd[best_itm].down;
@@ -523,7 +524,7 @@ fprintf(stderr,"L"O"d:",level);
 print_option(cur_node,stderr);
 }
 /*28:*/
-#line 700 "dlx1.w"
+#line 702 "dlx1.w"
 
 for(pp= cur_node+1;pp!=cur_node;){
 o,cc= nd[pp].itm;
@@ -532,10 +533,10 @@ else cover(cc),pp++;
 }
 
 /*:28*/
-#line 605 "dlx1.w"
+#line 607 "dlx1.w"
 ;
 if(o,cl[root].next==root)/*31:*/
-#line 756 "dlx1.w"
+#line 759 "dlx1.w"
 
 {
 nodes++;
@@ -551,7 +552,7 @@ if(shape_file){
 fprintf(shape_file,"sol\n");fflush(shape_file);
 }
 /*32:*/
-#line 773 "dlx1.w"
+#line 776 "dlx1.w"
 
 {
 count++;
@@ -565,12 +566,12 @@ goto recover;
 }
 
 /*:32*/
-#line 770 "dlx1.w"
+#line 773 "dlx1.w"
 ;
 }
 
 /*:31*/
-#line 606 "dlx1.w"
+#line 608 "dlx1.w"
 ;
 if(++level> maxl){
 if(level>=max_level){
@@ -585,7 +586,7 @@ if(level==0)goto done;
 level--;
 oo,cur_node= choice[level],best_itm= nd[cur_node].itm;
 recover:/*29:*/
-#line 718 "dlx1.w"
+#line 720 "dlx1.w"
 
 for(pp= cur_node-1;pp!=cur_node;){
 o,cc= nd[pp].itm;
@@ -594,7 +595,7 @@ else uncover(cc),pp--;
 }
 
 /*:29*/
-#line 619 "dlx1.w"
+#line 621 "dlx1.w"
 ;
 oo,cur_node= choice[level]= nd[cur_node].down;goto advance;
 
@@ -603,7 +604,7 @@ oo,cur_node= choice[level]= nd[cur_node].down;goto advance;
 ;
 done:if(vbose&show_tots)
 /*22:*/
-#line 564 "dlx1.w"
+#line 566 "dlx1.w"
 
 {
 fprintf(stderr,"Item totals:");
@@ -618,7 +619,7 @@ fprintf(stderr,"\n");
 #line 131 "dlx1.w"
 ;
 if(vbose&show_profile)/*35:*/
-#line 840 "dlx1.w"
+#line 843 "dlx1.w"
 
 {
 fprintf(stderr,"Profile:\n");
@@ -636,16 +637,18 @@ if(vbose&show_basics){
 fprintf(stderr,"Altogether "O"llu solution"O"s, "O"llu+"O"llu mems,",
 count,count==1?"":"s",imems,mems);
 bytes= last_itm*sizeof(item)+last_node*sizeof(node)+maxl*sizeof(int);
-fprintf(stderr," "O"llu updates, "O"llu bytes, "O"llu nodes.\n",
+fprintf(stderr," "O"llu updates, "O"llu bytes, "O"llu nodes,",
 updates,bytes,nodes);
+fprintf(stderr," ccost "O"lld%%.\n",
+(200*cmems+mems)/(2*mems));
 }
 /*5:*/
-#line 245 "dlx1.w"
+#line 247 "dlx1.w"
 
 if(shape_file)fclose(shape_file);
 
 /*:5*/
-#line 142 "dlx1.w"
+#line 144 "dlx1.w"
 ;
 }
 
