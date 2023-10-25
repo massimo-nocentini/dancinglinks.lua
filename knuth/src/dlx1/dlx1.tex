@@ -24,7 +24,7 @@ for more than 15 years, and after extending it in dozens of ways
 for a wide variety of combinatorial problems, I'm finally ready to replace it
 with a more carefully crafted piece of code.
 
-My intention is to make this program match Algorithm 7.2.2.1D, so that
+My intention is to make this program match Algorithm 7.2.2.1X, so that
 I~can use it to make the quantitative experiments that will ultimately
 be reported in Volume~4B.
 
@@ -95,23 +95,23 @@ input or to format the output.)
 
 Here is the overall structure:
 
-\Y\B\4\D\|o\5
+\Y\B\4\D$\|o$ \5
 $\\{mems}\PP{}$\C{ count one mem }\par
-\B\4\D\\{oo}\5
+\B\4\D$\\{oo}$ \5
 $\\{mems}\MRL{+{\K}}{}$\T{2}\C{ count two mems }\par
-\B\4\D\\{ooo}\5
+\B\4\D$\\{ooo}$ \5
 $\\{mems}\MRL{+{\K}}{}$\T{3}\C{ count three mems }\par
-\B\4\D\|O\5
+\B\4\D$\|O$ \5
 \.{"\%"}\C{ used for percent signs in format strings }\par
-\B\4\D\Xmod\5
+\B\4\D$\Xmod$ \5
 $\MOD{}$\C{ used for percent signs denoting remainder in \CEE/ }\par
-\B\4\D\\{max\_level}\5
-\T{500}\C{ at most this many options in a solution }\par
-\B\4\D\\{max\_cols}\5
+\B\4\D$\\{max\_level}$ \5
+\T{10000}\C{ at most this many options in a solution }\par
+\B\4\D$\\{max\_cols}$ \5
 \T{100000}\C{ at most this many items }\par
-\B\4\D\\{max\_nodes}\5
+\B\4\D$\\{max\_nodes}$ \5
 \T{25000000}\C{ at most this many nonzero elements in the matrix }\par
-\B\4\D\\{bufsize}\5
+\B\4\D$\\{bufsize}$ \5
 $(\T{9}*\\{max\_cols}+\T{3}{}$)\C{ a buffer big enough to hold all item names }%
 \par
 \Y\B\8\#\&{include} \.{<stdio.h>}\6
@@ -124,11 +124,10 @@ $(\T{9}*\\{max\_cols}+\T{3}{}$)\C{ a buffer big enough to hold all item names }%
 \X6:Type definitions\X;\6
 \X3:Global variables\X;\6
 \X10:Subroutines\X;\7
-\\{main}(\&{int} \\{argc}${},\39{}$\&{char} ${}{*}\\{argv}[\,]){}$\1\1\2\2\6
+\1\1\\{main}(\&{int} \\{argc}${},\39{}$\&{char} ${}{*}\\{argv}[\,])\2\2{}$\6
 ${}\{{}$\1\6
-\&{register} \&{int} \\{cc}${},{}$ \|i${},{}$ \|j${},{}$ \|k${},{}$ \|p${},{}$ %
-\\{pp}${},{}$ \|q${},{}$ \|r${},{}$ \|t${},{}$ \\{cur\_node}${},{}$ \\{best%
-\_itm};\7
+\&{register} \&{int} \\{cc}${},\39\|i,\39\|j,\39\|k,\39\|p,\39\\{pp},\39\|q,\39%
+\|r,\39\|t,\39\\{cur\_node},\39\\{best\_itm};{}$\7
 \X4:Process the command line\X;\6
 \X14:Input the item names\X;\6
 \X17:Input the options\X;\6
@@ -154,7 +153,9 @@ ${}\\{fprintf}(\\{stderr},\39\.{"Altogether\ "}\|O\.{"llu\ solution"}\|O\.{"s,\
 ${}\\{bytes}\K\\{last\_itm}*\&{sizeof}(\&{item})+\\{last\_node}*\&{sizeof}(%
 \&{node})+\\{maxl}*\&{sizeof}(\&{int});{}$\6
 ${}\\{fprintf}(\\{stderr},\39\.{"\ "}\|O\.{"llu\ updates,\ "}\|O\.{"llu\ bytes,%
-\ "}\|O\.{"llu\ nodes.\\n"},\39\\{updates},\39\\{bytes},\39\\{nodes});{}$\6
+\ "}\|O\.{"llu\ nodes,"},\39\\{updates},\39\\{bytes},\39\\{nodes});{}$\6
+${}\\{fprintf}(\\{stderr},\39\.{"\ ccost\ "}\|O\.{"lld\%\%.\\n"},\39(\T{200}*%
+\\{cmems}+\\{mems})/(\T{2}*\\{mems}));{}$\6
 \4${}\}{}$\2\6
 \X5:Close the files\X;\6
 \4${}\}{}$\2\par
@@ -178,7 +179,7 @@ defines the seed for any random numbers that are used;
 `\.d$\langle\,$integer$\,\rangle$' sets \PB{\\{delta}}, which causes periodic
 state reports on \PB{\\{stderr}} after the algorithm has performed
 approximately
-\PB{\\{delta}} mems since the previous report;
+\PB{\\{delta}} mems since the previous report (default 10000000000);
 \item{$\bullet$}
 `\.c$\langle\,$positive integer$\,\rangle$' limits the levels on which
 choices are shown during verbose tracing;
@@ -199,21 +200,21 @@ termination if \PB{$\\{mems}>\\{timeout}$} at the beginning of a level);
 `\.S$\langle\,$filename$\,\rangle$' to output a ``shape file'' that encodes
 the search tree.
 
-\Y\B\4\D\\{show\_basics}\5
+\Y\B\4\D$\\{show\_basics}$ \5
 \T{1}\C{ \PB{\\{vbose}} code for basic stats; this is the default }\par
-\B\4\D\\{show\_choices}\5
+\B\4\D$\\{show\_choices}$ \5
 \T{2}\C{ \PB{\\{vbose}} code for backtrack logging }\par
-\B\4\D\\{show\_details}\5
+\B\4\D$\\{show\_details}$ \5
 \T{4}\C{ \PB{\\{vbose}} code for further commentary }\par
-\B\4\D\\{show\_profile}\5
+\B\4\D$\\{show\_profile}$ \5
 \T{128}\C{ \PB{\\{vbose}} code to show the search tree profile }\par
-\B\4\D\\{show\_full\_state}\5
+\B\4\D$\\{show\_full\_state}$ \5
 \T{256}\C{ \PB{\\{vbose}} code for complete state reports }\par
-\B\4\D\\{show\_tots}\5
+\B\4\D$\\{show\_tots}$ \5
 \T{512}\C{ \PB{\\{vbose}} code for reporting item totals at start and end }\par
-\B\4\D\\{show\_warnings}\5
+\B\4\D$\\{show\_warnings}$ \5
 \T{1024}\C{ \PB{\\{vbose}} code for reporting options without primaries }\par
-\B\4\D\\{show\_max\_deg}\5
+\B\4\D$\\{show\_max\_deg}$ \5
 \T{2048}\C{ \PB{\\{vbose}} code for reporting maximum branching degree }\par
 \Y\B\4\X3:Global variables\X${}\E{}$\6
 \&{int} \\{random\_seed}${}\K\T{0}{}$;\C{ seed for the random words of \PB{%
@@ -233,13 +234,15 @@ reports stop }\6
 \&{char} \\{buf}[\\{bufsize}];\C{ input buffer }\6
 \&{ullng} \\{count};\C{ solutions found so far }\6
 \&{ullng} \\{options};\C{ options seen so far }\6
-\&{ullng} \\{imems}${},{}$ \\{mems};\C{ mem counts }\6
+\&{ullng} \\{imems}${},\39\\{mems},\39\\{cmems},\39\\{tmems}{}$;\C{ mem counts
+}\6
 \&{ullng} \\{updates};\C{ update counts }\6
 \&{ullng} \\{bytes};\C{ memory used by main data structures }\6
 \&{ullng} \\{nodes};\C{ total number of branch nodes initiated }\6
-\&{ullng} \\{thresh}${}\K\T{0}{}$;\C{ report when \PB{\\{mems}} exceeds this,
-if \PB{$\\{delta}\I\T{0}$} }\6
-\&{ullng} \\{delta}${}\K\T{0}{}$;\C{ report every \PB{\\{delta}} or so mems }\6
+\&{ullng} \\{thresh}${}\K\T{10000000000}{}$;\C{ report when \PB{\\{mems}}
+exceeds this, if \PB{$\\{delta}\I\T{0}$} }\6
+\&{ullng} \\{delta}${}\K\T{10000000000}{}$;\C{ report every \PB{\\{delta}} or
+so mems }\6
 \&{ullng} \\{maxcount}${}\K\T{\^ffffffffffffffff}{}$;\C{ stop after finding
 this many solutions }\6
 \&{ullng} \\{timeout}${}\K\T{\^1fffffffffffffff}{}$;\C{ give up after this many
@@ -395,13 +398,13 @@ it handles the spacer node transitions! This additional mem cost is
 compensated by the smaller node size, hence greater likelihood of cache hits.
 But the gain from pure sequential allocation wasn't as great as I'd hoped.]
 
-\Y\B\4\D\\{len}\5
+\Y\B\4\D$\\{len}$ \5
 \\{itm}\C{ item list length (used in header nodes only) }\par
-\B\4\D\\{aux}\5
+\B\4\D$\\{aux}$ \5
 \\{spare}\C{ an auxiliary quantity (used in header nodes only) }\par
 \Y\B\4\X6:Type definitions\X${}\E{}$\6
 \&{typedef} \&{struct} \&{node\_struct} ${}\{{}$\1\6
-\&{int} \\{up}${},{}$ \\{down};\C{ predecessor and successor in item list }\6
+\&{int} \\{up}${},\39\\{down}{}$;\C{ predecessor and successor in item list }\6
 \&{int} \\{itm};\C{ the item containing this node }\6
 \&{int} \\{spare};\C{ padding, not used in {\mc DLX1} }\2\6
 ${}\}{}$ \&{node};\par
@@ -426,7 +429,7 @@ We count one mem for a simultaneous access to the \PB{\\{prev}} and \PB{%
 \&{typedef} \&{struct} \&{itm\_struct} ${}\{{}$\1\6
 \&{char} \\{name}[\T{8}];\C{ symbolic identification of the item, for printing
 }\6
-\&{int} \\{prev}${},{}$ \\{next};\C{ neighbors of this item }\2\6
+\&{int} \\{prev}${},\39\\{next}{}$;\C{ neighbors of this item }\2\6
 ${}\}{}$ \&{item};\par
 \fi
 
@@ -444,7 +447,7 @@ secondary items }\6
 list of items that need to be covered, and is identifiable by the fact
 that its \PB{\\{name}} is empty.
 
-\Y\B\4\D\\{root}\5
+\Y\B\4\D$\\{root}$ \5
 \T{0}\C{ \PB{\\{cl}[\\{root}]} is the gateway to the unsettled items }\par
 \fi
 
@@ -457,7 +460,7 @@ nodes. It also prints the position of the option in its item list.
 \1\1\&{void} \\{print\_option}(\&{int} \|p${},\39{}$\&{FILE} ${}{*}\\{stream})%
 \2\2{}$\6
 ${}\{{}$\1\6
-\&{register} \&{int} \|k${},{}$ \|q;\7
+\&{register} \&{int} \|k${},\39\|q;{}$\7
 \&{if} ${}(\|p<\\{last\_itm}\V\|p\G\\{last\_node}\V\\{nd}[\|p].\\{itm}\Z%
 \T{0}){}$\5
 ${}\{{}$\1\6
@@ -526,13 +529,12 @@ ${}\\{fprintf}(\\{stderr},\39\.{"Item\ "}\|O\.{".8s,\ length\ "}\|O\.{"d:\\n"},%
 our
 data structure have gone awry.
 
-\Y\B\4\D\\{sanity\_checking}\5
+\Y\B\4\D$\\{sanity\_checking}$ \5
 \T{0}\C{ set this to 1 if you suspect a bug }\par
 \Y\B\4\X10:Subroutines\X${}\mathrel+\E{}$\6
 \1\1\&{void} \\{sanity}(\&{void})\2\2\6
 ${}\{{}$\1\6
-\&{register} \&{int} \|k${},{}$ \|p${},{}$ \|q${},{}$ \\{pp}${},{}$ %
-\\{qq}${},{}$ \|t;\7
+\&{register} \&{int} \|k${},\39\|p,\39\|q,\39\\{pp},\39\\{qq},\39\|t;{}$\7
 \&{for} ${}(\|q\K\\{root},\39\|p\K\\{cl}[\|q].\\{next};{}$  ; ${}\|q\K\|p,\39%
 \|p\K\\{cl}[\|p].\\{next}){}$\5
 ${}\{{}$\1\6
@@ -568,7 +570,7 @@ ${}\\{fprintf}(\\{stderr},\39\.{"Bad\ len\ field\ in\ it}\)\.{em\ "}\|O\.{".8s!%
 code,
 whose goal is to parse and store the input data and to check its validity.
 
-\Y\B\4\D\\{panic}$(\|m)$\6
+\Y\B\4\D$\\{panic}(\|m)$ \6
 ${}\{{}$\5
 \1${}\\{fprintf}(\\{stderr},\39\.{""}\|O\.{"s!\\n"}\|O\.{"d:\ "}\|O\.{".99s%
 \\n"},\39\|m,\39\|p,\39\\{buf}){}$;\5
@@ -904,8 +906,8 @@ to remain in cache memory where they're readily accessible.
 \Y\B\4\X10:Subroutines\X${}\mathrel+\E{}$\6
 \1\1\&{void} \\{cover}(\&{int} \|c)\2\2\6
 ${}\{{}$\1\6
-\&{register} \&{int} \\{cc}${},{}$ \|l${},{}$ \|r${},{}$ \\{rr}${},{}$ %
-\\{nn}${},{}$ \\{uu}${},{}$ \\{dd}${},{}$ \|t;\7
+\&{register} \&{int} \\{cc}${},\39\|l,\39\|r,\39\\{rr},\39\\{nn},\39\\{uu},\39%
+\\{dd},\39\|t;{}$\7
 ${}\|o,\39\|l\K\\{cl}[\|c].\\{prev},\39\|r\K\\{cl}[\|c].\\{next};{}$\6
 ${}\\{oo},\39\\{cl}[\|l].\\{next}\K\|r,\39\\{cl}[\|r].\\{prev}\K\|l;{}$\6
 ${}\\{updates}\PP;{}$\6
@@ -942,8 +944,8 @@ magically to their former state.
 \Y\B\4\X10:Subroutines\X${}\mathrel+\E{}$\6
 \1\1\&{void} \\{uncover}(\&{int} \|c)\2\2\6
 ${}\{{}$\1\6
-\&{register} \&{int} \\{cc}${},{}$ \|l${},{}$ \|r${},{}$ \\{rr}${},{}$ %
-\\{nn}${},{}$ \\{uu}${},{}$ \\{dd}${},{}$ \|t;\7
+\&{register} \&{int} \\{cc}${},\39\|l,\39\|r,\39\\{rr},\39\\{nn},\39\\{uu},\39%
+\\{dd},\39\|t;{}$\7
 \&{for} ${}(\|o,\39\\{rr}\K\\{nd}[\|c].\\{down};{}$ ${}\\{rr}\G\\{last%
 \_itm};{}$ \|o${},\39\\{rr}\K\\{nd}[\\{rr}].\\{down}){}$\1\6
 \&{for} ${}(\\{nn}\K\\{rr}+\T{1};{}$ ${}\\{nn}\I\\{rr};{}$ \,)\5
@@ -1006,11 +1008,11 @@ choose the leftmost --- unless we're randomizing, in which case we
 select one of them at random.
 
 \Y\B\4\X30:Set \PB{\\{best\_itm}} to the best item for branching\X${}\E{}$\6
-$\|t\K\\{max\_nodes};{}$\6
+$\\{tmems}\K\\{mems},\39\|t\K\\{max\_nodes};{}$\6
 \&{if} ${}((\\{vbose}\AND\\{show\_details})\W\\{level}<\\{show\_choices\_max}\W%
 \\{level}\G\\{maxl}-\\{show\_choices\_gap}){}$\1\5
 ${}\\{fprintf}(\\{stderr},\39\.{"Level\ "}\|O\.{"d:"},\39\\{level});{}$\2\6
-\&{for} ${}(\|o,\39\|k\K\\{cl}[\\{root}].\\{next};{}$ ${}\|k\I\\{root};{}$ %
+\&{for} ${}(\|o,\39\|k\K\\{cl}[\\{root}].\\{next};{}$ ${}\|t\W\|k\I\\{root};{}$
 \|o${},\39\|k\K\\{cl}[\|k].\\{next}){}$\5
 ${}\{{}$\1\6
 \&{if} ${}((\\{vbose}\AND\\{show\_details})\W\\{level}<\\{show\_choices\_max}\W%
@@ -1041,7 +1043,8 @@ ${}\{{}$\1\6
 ${}\\{fprintf}(\\{shape\_file},\39\.{""}\|O\.{"d\ "}\|O\.{".8s\\n"},\39\|t,\39%
 \\{cl}[\\{best\_itm}].\\{name});{}$\6
 \\{fflush}(\\{shape\_file});\6
-\4${}\}{}$\2\par
+\4${}\}{}$\2\6
+${}\\{cmems}\MRL{+{\K}}\\{mems}-\\{tmems}{}$;\par
 \U23.\fi
 
 \M{31}\B\X31:Visit a solution and \PB{\&{goto} \\{recover}}\X${}\E{}$\6
@@ -1122,13 +1125,13 @@ of a single node, this estimate is~.5; otherwise, if the first choice
 is `$k$ of~$d$', the estimate is $(k-1)/d$ plus $1/d$ times the
 recursively evaluated estimate for the $k$th subtree. (This estimate
 might obviously be very misleading, in some cases, but at least it
-grows monotonically.)
+tends to grow monotonically.)
 
 \Y\B\4\X10:Subroutines\X${}\mathrel+\E{}$\6
 \1\1\&{void} \\{print\_progress}(\&{void})\2\2\6
 ${}\{{}$\1\6
-\&{register} \&{int} \|l${},{}$ \|k${},{}$ \|d${},{}$ \|c${},{}$ \|p;\6
-\&{register} \&{double} \|f${},{}$ \\{fd};\7
+\&{register} \&{int} \|l${},\39\|k,\39\|d,\39\|c,\39\|p;{}$\6
+\&{register} \&{double} \|f${},\39\\{fd};{}$\7
 ${}\\{fprintf}(\\{stderr},\39\.{"\ after\ "}\|O\.{"lld\ mems:\ "}\|O\.{"lld\
 sols,"},\39\\{mems},\39\\{count});{}$\6
 \&{for} ${}(\|f\K\T{0.0},\39\\{fd}\K\T{1.0},\39\|l\K\T{0};{}$ ${}\|l<%

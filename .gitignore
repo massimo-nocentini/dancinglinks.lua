@@ -2,5 +2,5 @@
 *.log
 *.scn
 *.toc
-.vscode/c_cpp_properties.json
 knuth/src/dlx1/dlx1
+knuth/src/dlx1/dlx1.idx
