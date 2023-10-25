@@ -4,3 +4,4 @@
 *.toc
 knuth/src/dlx1/dlx1
 knuth/src/dlx1/dlx1.idx
+knuth/src/dlx1/libdlx1.so

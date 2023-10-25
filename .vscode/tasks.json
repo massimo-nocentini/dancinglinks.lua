@@ -20,7 +20,10 @@
 			"label": "DLX - generate C sources && compile",
 			"type": "shell",
 			"linux": {
-				"command": "ctangle dlx1.w && gcc -O3 -std=c17 -I/usr/local/sgb/include/ -Wall dlx1.c -o dlx1 -lgb"
+				"command": [
+					"ctangle dlx1.w &&",
+					"gcc -O3 -std=c17 -I/usr/local/sgb/include/ -Wall dlx1.c -o dlx1 -lgb"
+				]
 			},
 			"group": "build",
 			"presentation": {
@@ -36,6 +39,23 @@
 			"type": "shell",
 			"linux": {
 				"command": "rm dlx1.idx dlx1.log dlx1.pdf dlx1.scn dlx1.toc && cweave dlx1.w && pdftex dlx1.tex"
+			},
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "knuth/src/dlx1"
+			}
+		},
+		{
+			"label": "DLX - compile shared library",
+			"type": "shell",
+			"linux": {
+				"command": [
+					"gcc -O3 -std=c17 -I/usr/local/sgb/include/ -Wall --shared -fPIC libdlx1.c -o libdlx1.so -lgb"
+				]
 			},
 			"group": "build",
 			"presentation": {
