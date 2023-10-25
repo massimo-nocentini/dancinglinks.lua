@@ -5,7 +5,7 @@
 			"label": "DLX - update CWEB files",
 			"type": "shell",
 			"linux": {
-				"command": "rm dlx1.w && wget https://cs.stanford.edu/~knuth/programs/dlx1.w"
+				"command": "rm -f dlx1.w && wget https://cs.stanford.edu/~knuth/programs/dlx1.w"
 			},
 			"group": "build",
 			"presentation": {
@@ -64,6 +64,60 @@
 			},
 			"options": {
 				"cwd": "knuth/src/dlx1"
+			}
+		},
+		{
+			"label": "DLX - install .h, .so and dlx1",
+			"type": "shell",
+			"linux": {
+				"command": [
+					"sudo cp dlx1.h /usr/local/include && sudo cp libdlx1.so /usr/local/lib "
+				]
+			},
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "knuth/src/dlx1"
+			}
+		},
+		{
+			"label": "DLX - update CWEB file: queens-dlx.w",
+			"type": "shell",
+			"linux": {
+				"command": [
+					"rm -f queens-dlx.w && wget https://cs.stanford.edu/~knuth/programs/queens-dlx.w &&",
+					"ctangle queens-dlx.w &&",
+					"cweave queens-dlx.w"
+				]
+			},
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "knuth/test/queens"
+			}
+		},
+		{
+			"label": "DLX - queens-dlx - compile bin and pdf",
+			"type": "shell",
+			"linux": {
+				"command": [
+					"gcc -O3 queens-dlx.c -o queens-dlx &&",
+					"pdftex queens-dlx.tex"
+				]
+			},
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "knuth/test/queens"
 			}
 		},
 	]
