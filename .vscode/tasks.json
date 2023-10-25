@@ -164,5 +164,25 @@
 				"cwd": "knuth/test/queens"
 			}
 		},
+		{
+			"label": "DLX - queens-dlx - test",
+			"type": "shell",
+			"linux": {
+				"command": [
+					"../../src/dlx1/dlx < data_8x8.txt"
+				]
+			},
+			"dependsOn": [
+				"DLX - compile executable",
+			],
+			"group": "test",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "knuth/test/queens"
+			}
+		},
 	]
 }

@@ -25,6 +25,8 @@
 
 #define sanity_checking 0
 
+#define max_name_length 64
+
 #define panic(m)                                                    \
     {                                                               \
         fprintf(stderr, "" O "s!\n" O "d: " O ".99s\n", m, p, buf); \
@@ -57,7 +59,7 @@ typedef struct node_struct
 
 typedef struct itm_struct
 {
-    char name[8];
+    char name[max_name_length];
     int prev, next;
 } item;
 
@@ -91,7 +93,7 @@ FILE *shape_file;
 char *shape_name;
 int maxdeg;
 
-/*:3*/ /*8:*/
+/*:3*/ /*max_name_length:*/
 #line 344 "dlx1.w"
 
 node nd[max_nodes];
@@ -100,7 +102,7 @@ item cl[max_cols + 2];
 int second = max_cols;
 int last_itm;
 
-/*:8*/ /*24:*/
+/*:max_name_length*/ /*24:*/
 #line 624 "dlx1.w"
 
 int level;
@@ -391,18 +393,18 @@ void dlx1(int argc, char *argv[])
         panic("No items");
     for (; o, buf[p];)
     {
-        for (j = 0; j < 8 && (o, !isspace(buf[p + j])); j++)
+        for (j = 0; j < max_name_length && (o, !isspace(buf[p + j])); j++)
         {
             if (buf[p + j] == ':' || buf[p + j] == '|')
                 panic("Illegal character in item name");
             o, cl[last_itm].name[j] = buf[p + j];
         }
-        if (j == 8 && !isspace(buf[p + j]))
+        if (j == max_name_length && !isspace(buf[p + j]))
             panic("Item name too long");
 /*15:*/
 #line 470 "dlx1.w"
 
-        for (k = 1; o, strncmp(cl[k].name, cl[last_itm].name, 8); k++)
+        for (k = 1; o, strncmp(cl[k].name, cl[last_itm].name, max_name_length); k++)
             ;
         if (k < last_itm)
             panic("Duplicate item name");
@@ -461,16 +463,16 @@ void dlx1(int argc, char *argv[])
         i = last_node;
         for (pp = 0; buf[p];)
         {
-            for (j = 0; j < 8 && (o, !isspace(buf[p + j])); j++)
+            for (j = 0; j < max_name_length && (o, !isspace(buf[p + j])); j++)
                 o, cl[last_itm].name[j] = buf[p + j];
-            if (j == 8 && !isspace(buf[p + j]))
+            if (j == max_name_length && !isspace(buf[p + j]))
                 panic("Item name too long");
-            if (j < 8)
+            if (j < max_name_length)
                 o, cl[last_itm].name[j] = '\0';
 /*18:*/
 #line 516 "dlx1.w"
 
-            for (k = 0; o, strncmp(cl[k].name, cl[last_itm].name, 8); k++)
+            for (k = 0; o, strncmp(cl[k].name, cl[last_itm].name, max_name_length); k++)
                 ;
             if (k == last_itm)
                 panic("Unknown item name");
