@@ -120,5 +120,22 @@
 				"cwd": "knuth/test/queens"
 			}
 		},
+		{
+			"label": "DLX - queens-dlx - data for 8x8 square",
+			"type": "shell",
+			"linux": {
+				"command": [
+					"./queens-dlx 8 > data_8x8.txt"
+				]
+			},
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"options": {
+				"cwd": "knuth/test/queens"
+			}
+		},
 	]
 }
