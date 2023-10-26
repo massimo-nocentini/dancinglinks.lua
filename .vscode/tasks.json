@@ -21,7 +21,7 @@
 			"type": "shell",
 			"linux": {
 				"command": [
-					// "ctangle dlx1.w &&",
+					"ctangle dlx1.w &&",
 					"gcc -O3 -std=c17 -I/usr/local/sgb/include/ -Wall dlx1.c -o dlx1 -lgb"
 				]
 			},
