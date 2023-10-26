@@ -21,7 +21,7 @@
 			"type": "shell",
 			"linux": {
 				"command": [
-					"ctangle dlx1.w &&",
+					// "ctangle dlx1.w &&",
 					"gcc -O3 -std=c17 -I/usr/local/sgb/include/ -Wall dlx1.c -o dlx1 -lgb"
 				]
 			},
@@ -71,7 +71,7 @@
 			"type": "shell",
 			"linux": {
 				"command": [
-					"gcc -O3 -Wall -o dlx dlx.c  -ldlx1"
+					"gcc -O3 -Wall -fpic -o dlx dlx.c -ldlx1"
 				]
 			},
 			"group": "build",
@@ -88,7 +88,7 @@
 			"type": "shell",
 			"linux": {
 				"command": [
-					"sudo cp dlx1.h /usr/local/include && sudo cp libdlx1.so /usr/local/lib"
+					"sudo cp dlx1.h /usr/local/include && sudo mv libdlx1.so /usr/local/lib && sudo ldconfig"
 				]
 			},
 			"group": "build",

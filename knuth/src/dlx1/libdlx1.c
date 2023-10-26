@@ -1,13 +1,13 @@
 
+#define o dlx->mems++
+#define oo dlx->mems += 2
+#define ooo dlx->mems += 3
 
-#define panic(m)                                                    \
-    {                                                               \
-        fprintf(stderr, "" O "s!\n" O "d: " O ".99s\n", m, p, buf); \
-        exit(-666);                                                 \
-    }
+#define O "%"
+#define mod %
 
-/*2:*/
-#line 108 "dlx1.w"
+#define len itm
+#define aux spare
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,227 +16,184 @@
 #include "gb_flip.h"
 #include "dlx1.h"
 
+void panic(dlxState_t *dlx, int p, char *m)
+{
+    fprintf(stderr, "" O "s!\n" O "d: " O ".99s\n", m, p, dlx->buf);
+    exit(-666);
+}
 
-int random_seed = 0;
-int randomizing;
-int vbose = show_basics + show_warnings;
-int spacing;
-int show_choices_max = 1000000;
-int show_choices_gap = 1000000;
-
-int show_levels_max = 1000000;
-int maxl = 0;
-char buf[bufsize];
-ullng count;
-ullng options;
-ullng imems, mems, cmems, tmems;
-ullng updates;
-ullng bytes;
-ullng nodes;
-ullng thresh = 10000000000;
-ullng delta = 10000000000;
-ullng maxcount = 0xffffffffffffffff;
-ullng timeout = 0x1fffffffffffffff;
-FILE *shape_file;
-char *shape_name;
-int maxdeg;
-
-/*:3*/ /*max_name_length:*/
-#line 344 "dlx1.w"
-
-node nd[max_nodes];
-int last_node;
-item cl[max_cols + 2];
-int second = max_cols;
-int last_itm;
-
-/*:max_name_length*/ /*24:*/
-#line 624 "dlx1.w"
-
-int level;
-int choice[max_level];
-ullng profile[max_level];
+/*2:*/
 
 /*:24*/
-#line 117 "dlx1.w"
 ;
 /*10:*/
-#line 361 "dlx1.w"
 
-void print_option(int p, FILE *stream)
+void print_option(dlxState_t *dlx, int p, FILE *stream)
 {
-    register int k, q;
-    if (p < last_itm || p >= last_node || nd[p].itm <= 0)
+    int k, q;
+    if (p < dlx->last_itm || p >= dlx->last_node || dlx->nd[p].itm <= 0)
     {
         fprintf(stderr, "Illegal option " O "d!\n", p);
         return;
     }
     for (q = p;;)
     {
-        fprintf(stream, " " O ".8s", cl[nd[q].itm].name);
+        fprintf(stream, " " O ".8s", dlx->cl[dlx->nd[q].itm].name);
         q++;
-        if (nd[q].itm <= 0)
-            q = nd[q].up;
+        if (dlx->nd[q].itm <= 0)
+            q = dlx->nd[q].up;
         if (q == p)
             break;
     }
-    for (q = nd[nd[p].itm].down, k = 1; q != p; k++)
+    for (q = dlx->nd[dlx->nd[p].itm].down, k = 1; q != p; k++)
     {
-        if (q == nd[p].itm)
+        if (q == dlx->nd[p].itm)
         {
             fprintf(stream, " (?)\n");
             return;
         }
         else
-            q = nd[q].down;
+            q = dlx->nd[q].down;
     }
-    fprintf(stream, " (" O "d of " O "d)\n", k, nd[nd[p].itm].len);
+    fprintf(stream, " (" O "d of " O "d)\n", k, dlx->nd[dlx->nd[p].itm].len);
 }
 
-void prow(int p)
+void prow(dlxState_t *dlx, int p)
 {
-    print_option(p, stderr);
+    print_option(dlx, p, stderr);
 }
 
 /*:10*/ /*11:*/
-#line 388 "dlx1.w"
 
-void print_itm(int c)
+void print_itm(dlxState_t *dlx, int c)
 {
-    register int p;
-    if (c < root || c >= last_itm)
+    int p;
+    if (c < root || c >= dlx->last_itm)
     {
         fprintf(stderr, "Illegal item " O "d!\n", c);
         return;
     }
-    if (c < second)
+    if (c < dlx->second)
         fprintf(stderr, "Item " O ".8s, length " O "d, neighbors " O ".8s and " O ".8s:\n",
-                cl[c].name, nd[c].len, cl[cl[c].prev].name, cl[cl[c].next].name);
+                dlx->cl[c].name, dlx->nd[c].len, dlx->cl[dlx->cl[c].prev].name, dlx->cl[dlx->cl[c].next].name);
     else
-        fprintf(stderr, "Item " O ".8s, length " O "d:\n", cl[c].name, nd[c].len);
-    for (p = nd[c].down; p >= last_itm; p = nd[p].down)
-        prow(p);
+        fprintf(stderr, "Item " O ".8s, length " O "d:\n", dlx->cl[c].name, dlx->nd[c].len);
+    for (p = dlx->nd[c].down; p >= dlx->last_itm; p = dlx->nd[p].down)
+        prow(dlx, p);
 }
 
 /*:11*/ /*12:*/
-#line 407 "dlx1.w"
 
-void sanity(void)
+void sanity(dlxState_t *dlx)
 {
-    register int k, p, q, pp, qq, t;
-    for (q = root, p = cl[q].next;; q = p, p = cl[p].next)
+    int k, p, q, pp, qq;
+    for (q = root, p = dlx->cl[q].next;; q = p, p = dlx->cl[p].next)
     {
-        if (cl[p].prev != q)
+        if (dlx->cl[p].prev != q)
             fprintf(stderr, "Bad prev field at itm " O ".8s!\n",
-                    cl[p].name);
+                    dlx->cl[p].name);
         if (p == root)
             break;
-/*13:*/
-#line 418 "dlx1.w"
+        /*13:*/
 
-        for (qq = p, pp = nd[qq].down, k = 0;; qq = pp, pp = nd[pp].down, k++)
+        for (qq = p, pp = dlx->nd[qq].down, k = 0;; qq = pp, pp = dlx->nd[pp].down, k++)
         {
-            if (nd[pp].up != qq)
+            if (dlx->nd[pp].up != qq)
                 fprintf(stderr, "Bad up field at node " O "d!\n", pp);
             if (pp == p)
                 break;
-            if (nd[pp].itm != p)
+            if (dlx->nd[pp].itm != p)
                 fprintf(stderr, "Bad itm field at node " O "d!\n", pp);
         }
-        if (nd[p].len != k)
+        if (dlx->nd[p].len != k)
             fprintf(stderr, "Bad len field in item " O ".8s!\n",
-                    cl[p].name);
+                    dlx->cl[p].name);
 
-/*:13*/
-#line 414 "dlx1.w"
+        /*:13*/
         ;
     }
 }
 
 /*:12*/ /*26:*/
-#line 651 "dlx1.w"
 
-void cover(int c)
+void cover(dlxState_t *dlx, int c)
 {
-    register int cc, l, r, rr, nn, uu, dd, t;
-    o, l = cl[c].prev, r = cl[c].next;
-    oo, cl[l].next = r, cl[r].prev = l;
-    updates++;
-    for (o, rr = nd[c].down; rr >= last_itm; o, rr = nd[rr].down)
+    int cc, l, r, rr, nn, uu, dd, t;
+    o, l = dlx->cl[c].prev, r = dlx->cl[c].next;
+    oo, dlx->cl[l].next = r, dlx->cl[r].prev = l;
+    dlx->updates++;
+    for (o, rr = dlx->nd[c].down; rr >= dlx->last_itm; o, rr = dlx->nd[rr].down)
         for (nn = rr + 1; nn != rr;)
         {
-            o, uu = nd[nn].up, dd = nd[nn].down;
-            o, cc = nd[nn].itm;
+            o, uu = dlx->nd[nn].up, dd = dlx->nd[nn].down;
+            o, cc = dlx->nd[nn].itm;
             if (cc <= 0)
             {
                 nn = uu;
                 continue;
             }
-            oo, nd[uu].down = dd, nd[dd].up = uu;
-            updates++;
-            o, t = nd[cc].len - 1;
-            o, nd[cc].len = t;
+            oo, dlx->nd[uu].down = dd, dlx->nd[dd].up = uu;
+            dlx->updates++;
+            o, t = dlx->nd[cc].len - 1;
+            o, dlx->nd[cc].len = t;
             nn++;
         }
 }
 
 /*:26*/ /*27:*/
-#line 682 "dlx1.w"
 
-void uncover(int c)
+void uncover(dlxState_t *dlx, int c)
 {
-    register int cc, l, r, rr, nn, uu, dd, t;
-    for (o, rr = nd[c].down; rr >= last_itm; o, rr = nd[rr].down)
+    int cc, l, r, rr, nn, uu, dd, t;
+    for (o, rr = dlx->nd[c].down; rr >= dlx->last_itm; o, rr = dlx->nd[rr].down)
         for (nn = rr + 1; nn != rr;)
         {
-            o, uu = nd[nn].up, dd = nd[nn].down;
-            o, cc = nd[nn].itm;
+            o, uu = dlx->nd[nn].up, dd = dlx->nd[nn].down;
+            o, cc = dlx->nd[nn].itm;
             if (cc <= 0)
             {
                 nn = uu;
                 continue;
             }
-            oo, nd[uu].down = nd[dd].up = nn;
-            o, t = nd[cc].len + 1;
-            o, nd[cc].len = t;
+            oo, dlx->nd[uu].down = dlx->nd[dd].up = nn;
+            o, t = dlx->nd[cc].len + 1;
+            o, dlx->nd[cc].len = t;
             nn++;
         }
-    o, l = cl[c].prev, r = cl[c].next;
-    oo, cl[l].next = cl[r].prev = c;
+    o, l = dlx->cl[c].prev, r = dlx->cl[c].next;
+    oo, dlx->cl[l].next = dlx->cl[r].prev = c;
 }
 
 /*:27*/ /*33:*/
-#line 788 "dlx1.w"
 
-void print_state(void)
+void print_state(dlxState_t *dlx)
 {
-    register int l;
-    fprintf(stderr, "Current state (level " O "d):\n", level);
-    for (l = 0; l < level; l++)
+    int l;
+    fprintf(stderr, "Current state (level " O "d):\n", dlx->level);
+    for (l = 0; l < dlx->level; l++)
     {
-        print_option(choice[l], stderr);
-        if (l >= show_levels_max)
+        print_option(dlx, dlx->choice[l], stderr);
+        if (l >= dlx->show_levels_max)
         {
             fprintf(stderr, " ...\n");
             break;
         }
     }
     fprintf(stderr, " " O "lld solutions, " O "lld mems, and max level " O "d so far.\n",
-            count, mems, maxl);
+            dlx->count, dlx->mems, dlx->maxl);
 }
 
 /*:33*/ /*34:*/
-#line 823 "dlx1.w"
 
-void print_progress(void)
+void print_progress(dlxState_t *dlx)
 {
-    register int l, k, d, c, p;
-    register double f, fd;
-    fprintf(stderr, " after " O "lld mems: " O "lld sols,", mems, count);
-    for (f = 0.0, fd = 1.0, l = 0; l < level; l++)
+    int l, k, d, c, p;
+    double f, fd;
+    fprintf(stderr, " after " O "lld mems: " O "lld sols,", dlx->mems, dlx->count);
+    for (f = 0.0, fd = 1.0, l = 0; l < dlx->level; l++)
     {
-        c = nd[choice[l]].itm, d = nd[c].len;
-        for (k = 1, p = nd[c].down; p != choice[l]; k++, p = nd[p].down)
+        c = dlx->nd[dlx->choice[l]].itm, d = dlx->nd[c].len;
+        for (k = 1, p = dlx->nd[c].down; p != dlx->choice[l]; k++, p = dlx->nd[p].down)
             ;
         fd *= d, f += (k - 1) / fd;
         fprintf(stderr, " " O "c" O "c",
@@ -246,7 +203,7 @@ void print_progress(void)
                 d < 10 ? '0' + d : d < 36 ? 'a' + d - 10
                                : d < 62   ? 'A' + d - 36
                                           : '*');
-        if (l >= show_levels_max)
+        if (l >= dlx->show_levels_max)
         {
             fprintf(stderr, "...");
             break;
@@ -256,49 +213,62 @@ void print_progress(void)
 }
 
 /*:34*/
-#line 118 "dlx1.w"
 ;
-void dlx1(int argc, char *argv[])
+void dlx1_do(dlxState_t *dlx, int argc, char **argv)
 {
-    register int cc, i, j, k, p, pp, q, r, t, cur_node, best_itm;
-/*4:*/
-#line 221 "dlx1.w"
+    int cc, i, j, k, p, pp, q, r, t, cur_node, best_itm;
+
+    dlx->random_seed = 0;
+    dlx->vbose = show_basics + show_warnings;
+    dlx->show_choices_max = 1000000;
+    dlx->show_choices_gap = 1000000;
+    dlx->show_levels_max = 1000000;
+    dlx->maxl = 0;
+    dlx->thresh = 10000000000;
+    dlx->delta = 10000000000;
+    dlx->maxcount = 0xffffffffffffffff;
+    dlx->timeout = 0x1fffffffffffffff;
+    dlx->second = max_cols;
+
+    /*:max_name_length*/ /*24:*/
+
+    /*4:*/
 
     for (j = argc - 1, k = 0; j; j--)
         switch (argv[j][0])
         {
         case 'v':
-            k |= (sscanf(argv[j] + 1, "" O "d", &vbose) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->vbose)) - 1);
             break;
         case 'm':
-            k |= (sscanf(argv[j] + 1, "" O "d", &spacing) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->spacing)) - 1);
             break;
         case 's':
-            k |= (sscanf(argv[j] + 1, "" O "d", &random_seed) - 1), randomizing = 1;
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->random_seed)) - 1), dlx->randomizing = 1;
             break;
         case 'd':
-            k |= (sscanf(argv[j] + 1, "" O "lld", &delta) - 1), thresh = delta;
+            k |= (sscanf(argv[j] + 1, "" O "lld", &(dlx->delta)) - 1), dlx->thresh = dlx->delta;
             break;
         case 'c':
-            k |= (sscanf(argv[j] + 1, "" O "d", &show_choices_max) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->show_choices_max)) - 1);
             break;
         case 'C':
-            k |= (sscanf(argv[j] + 1, "" O "d", &show_levels_max) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->show_levels_max)) - 1);
             break;
         case 'l':
-            k |= (sscanf(argv[j] + 1, "" O "d", &show_choices_gap) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->show_choices_gap)) - 1);
             break;
         case 't':
-            k |= (sscanf(argv[j] + 1, "" O "lld", &maxcount) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "lld", &(dlx->maxcount)) - 1);
             break;
         case 'T':
-            k |= (sscanf(argv[j] + 1, "" O "lld", &timeout) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "lld", &(dlx->timeout)) - 1);
             break;
         case 'S':
-            shape_name = argv[j] + 1, shape_file = fopen(shape_name, "w");
-            if (!shape_file)
+            dlx->shape_name = argv[j] + 1, dlx->shape_file = fopen(dlx->shape_name, "w");
+            if (!dlx->shape_file)
                 fprintf(stderr, "Sorry, I can't open file `" O "s' for writing!\n",
-                        shape_name);
+                        dlx->shape_name);
             break;
         default:
             k = 1;
@@ -310,14 +280,12 @@ void dlx1(int argc, char *argv[])
                 argv[0]);
         exit(-1);
     }
-    if (randomizing)
-        gb_init_rand(random_seed);
+    if (dlx->randomizing)
+        gb_init_rand(dlx->random_seed);
 
-/*:4*/
-#line 121 "dlx1.w"
+    /*:4*/
     ;
-/*14:*/
-#line 432 "dlx1.w"
+    /*14:*/
 
     if (max_nodes <= 2 * max_cols)
     {
@@ -326,437 +294,409 @@ void dlx1(int argc, char *argv[])
     }
     while (1)
     {
-        if (!fgets(buf, bufsize, stdin))
+        if (!fgets(dlx->buf, bufsize, stdin))
             break;
-        if (o, buf[p = strlen(buf) - 1] != '\n')
-            panic("Input line way too long");
-        for (p = 0; o, isspace(buf[p]); p++)
+        if (o, dlx->buf[p = strlen(dlx->buf) - 1] != '\n')
+            panic(dlx, p, "Input line way too long");
+        for (p = 0; o, isspace(dlx->buf[p]); p++)
             ;
-        if (buf[p] == '|' || !buf[p])
+        if (dlx->buf[p] == '|' || !dlx->buf[p])
             continue;
-        last_itm = 1;
+        dlx->last_itm = 1;
         break;
     }
-    if (!last_itm)
-        panic("No items");
-    for (; o, buf[p];)
+    if (!dlx->last_itm)
+        panic(dlx, p, "No items");
+    for (; o, dlx->buf[p];)
     {
-        for (j = 0; j < max_name_length && (o, !isspace(buf[p + j])); j++)
+        for (j = 0; j < max_name_length && (o, !isspace(dlx->buf[p + j])); j++)
         {
-            if (buf[p + j] == ':' || buf[p + j] == '|')
-                panic("Illegal character in item name");
-            o, cl[last_itm].name[j] = buf[p + j];
+            if (dlx->buf[p + j] == ':' || dlx->buf[p + j] == '|')
+                panic(dlx, p, "Illegal character in item name");
+            o, dlx->cl[dlx->last_itm].name[j] = dlx->buf[p + j];
         }
-        if (j == max_name_length && !isspace(buf[p + j]))
-            panic("Item name too long");
-/*15:*/
-#line 470 "dlx1.w"
+        if (j == max_name_length && !isspace(dlx->buf[p + j]))
+            panic(dlx, p, "Item name too long");
+        /*15:*/
 
-        for (k = 1; o, strncmp(cl[k].name, cl[last_itm].name, max_name_length); k++)
+        for (k = 1; o, strncmp(dlx->cl[k].name, dlx->cl[dlx->last_itm].name, max_name_length); k++)
             ;
-        if (k < last_itm)
-            panic("Duplicate item name");
+        if (k < dlx->last_itm)
+            panic(dlx, p, "Duplicate item name");
 
-/*:15*/
-#line 453 "dlx1.w"
+        /*:15*/
         ;
-/*16:*/
-#line 474 "dlx1.w"
+        /*16:*/
 
-        if (last_itm > max_cols)
-            panic("Too many items");
-        oo, cl[last_itm - 1].next = last_itm, cl[last_itm].prev = last_itm - 1;
+        if (dlx->last_itm > max_cols)
+            panic(dlx, p, "Too many items");
+        oo, dlx->cl[dlx->last_itm - 1].next = dlx->last_itm, dlx->cl[dlx->last_itm].prev = dlx->last_itm - 1;
 
-        o, nd[last_itm].up = nd[last_itm].down = last_itm;
-        last_itm++;
+        o, dlx->nd[dlx->last_itm].up = dlx->nd[dlx->last_itm].down = dlx->last_itm;
+        dlx->last_itm++;
 
-/*:16*/
-#line 454 "dlx1.w"
+        /*:16*/
         ;
-        for (p += j + 1; o, isspace(buf[p]); p++)
+        for (p += j + 1; o, isspace(dlx->buf[p]); p++)
             ;
-        if (buf[p] == '|')
+        if (dlx->buf[p] == '|')
         {
-            if (second != max_cols)
-                panic("Item name line contains | twice");
-            second = last_itm;
-            for (p++; o, isspace(buf[p]); p++)
+            if (dlx->second != max_cols)
+                panic(dlx, p, "Item name line contains | twice");
+            dlx->second = dlx->last_itm;
+            for (p++; o, isspace(dlx->buf[p]); p++)
                 ;
         }
     }
-    if (second == max_cols)
-        second = last_itm;
-    oo, cl[last_itm].prev = last_itm - 1, cl[last_itm - 1].next = last_itm;
-    oo, cl[second].prev = last_itm, cl[last_itm].next = second;
+    if (dlx->second == max_cols)
+        dlx->second = dlx->last_itm;
+    oo, dlx->cl[dlx->last_itm].prev = dlx->last_itm - 1, dlx->cl[dlx->last_itm - 1].next = dlx->last_itm;
+    oo, dlx->cl[dlx->second].prev = dlx->last_itm, dlx->cl[dlx->last_itm].next = dlx->second;
 
-    oo, cl[root].prev = second - 1, cl[second - 1].next = root;
-    last_node = last_itm;
+    oo, dlx->cl[root].prev = dlx->second - 1, dlx->cl[dlx->second - 1].next = root;
+    dlx->last_node = dlx->last_itm;
 
-/*:14*/
-#line 122 "dlx1.w"
+    /*:14*/
     ;
-/*17:*/
-#line 484 "dlx1.w"
+    /*17:*/
 
     while (1)
     {
-        if (!fgets(buf, bufsize, stdin))
+        if (!fgets(dlx->buf, bufsize, stdin))
             break;
-        if (o, buf[p = strlen(buf) - 1] != '\n')
-            panic("Option line too long");
-        for (p = 0; o, isspace(buf[p]); p++)
+        if (o, dlx->buf[p = strlen(dlx->buf) - 1] != '\n')
+            panic(dlx, p, "Option line too long");
+        for (p = 0; o, isspace(dlx->buf[p]); p++)
             ;
-        if (buf[p] == '|' || !buf[p])
+        if (dlx->buf[p] == '|' || !dlx->buf[p])
             continue;
-        i = last_node;
-        for (pp = 0; buf[p];)
+        i = dlx->last_node;
+        for (pp = 0; dlx->buf[p];)
         {
-            for (j = 0; j < max_name_length && (o, !isspace(buf[p + j])); j++)
-                o, cl[last_itm].name[j] = buf[p + j];
-            if (j == max_name_length && !isspace(buf[p + j]))
-                panic("Item name too long");
+            for (j = 0; j < max_name_length && (o, !isspace(dlx->buf[p + j])); j++)
+                o, dlx->cl[dlx->last_itm].name[j] = dlx->buf[p + j];
+            if (j == max_name_length && !isspace(dlx->buf[p + j]))
+                panic(dlx, p, "Item name too long");
             if (j < max_name_length)
-                o, cl[last_itm].name[j] = '\0';
-/*18:*/
-#line 516 "dlx1.w"
+                o, dlx->cl[dlx->last_itm].name[j] = '\0';
+            /*18:*/
 
-            for (k = 0; o, strncmp(cl[k].name, cl[last_itm].name, max_name_length); k++)
+            for (k = 0; o, strncmp(dlx->cl[k].name, dlx->cl[dlx->last_itm].name, max_name_length); k++)
                 ;
-            if (k == last_itm)
-                panic("Unknown item name");
-            if (o, nd[k].aux >= i)
-                panic("Duplicate item name in this option");
-            last_node++;
-            if (last_node == max_nodes)
-                panic("Too many nodes");
-            o, nd[last_node].itm = k;
-            if (k < second)
+            if (k == dlx->last_itm)
+                panic(dlx, p, "Unknown item name");
+            if (o, dlx->nd[k].aux >= i)
+                panic(dlx, p, "Duplicate item name in this option");
+            dlx->last_node++;
+            if (dlx->last_node == max_nodes)
+                panic(dlx, p, "Too many nodes");
+            o, dlx->nd[dlx->last_node].itm = k;
+            if (k < dlx->second)
                 pp = 1;
-            o, t = nd[k].len + 1;
-/*19:*/
-#line 538 "dlx1.w"
+            o, t = dlx->nd[k].len + 1;
+            /*19:*/
 
-            o, nd[k].len = t;
-            nd[k].aux = last_node;
-            if (!randomizing)
+            o, dlx->nd[k].len = t;
+            dlx->nd[k].aux = dlx->last_node;
+            if (!dlx->randomizing)
             {
-                o, r = nd[k].up;
-                ooo, nd[r].down = nd[k].up = last_node, nd[last_node].up = r, nd[last_node].down = k;
+                o, r = dlx->nd[k].up;
+                ooo, dlx->nd[r].down = dlx->nd[k].up = dlx->last_node, dlx->nd[dlx->last_node].up = r, dlx->nd[dlx->last_node].down = k;
             }
             else
             {
-                mems += 4, t = gb_unif_rand(t);
-                for (o, r = k; t; o, r = nd[r].down, t--)
+                dlx->mems += 4, t = gb_unif_rand(t);
+                for (o, r = k; t; o, r = dlx->nd[r].down, t--)
                     ;
-                ooo, q = nd[r].up, nd[q].down = nd[r].up = last_node;
-                o, nd[last_node].up = q, nd[last_node].down = r;
+                ooo, q = dlx->nd[r].up, dlx->nd[q].down = dlx->nd[r].up = dlx->last_node;
+                o, dlx->nd[dlx->last_node].up = q, dlx->nd[dlx->last_node].down = r;
             }
 
-/*:19*/
-#line 525 "dlx1.w"
+            /*:19*/
             ;
 
-/*:18*/
-#line 496 "dlx1.w"
+            /*:18*/
             ;
-            for (p += j + 1; o, isspace(buf[p]); p++)
+            for (p += j + 1; o, isspace(dlx->buf[p]); p++)
                 ;
         }
         if (!pp)
         {
-            if (vbose & show_warnings)
-                fprintf(stderr, "Option ignored (no primary items): " O "s", buf);
-            while (last_node > i)
+            if (dlx->vbose & show_warnings)
+                fprintf(stderr, "Option ignored (no primary items): " O "s", dlx->buf);
+            while (dlx->last_node > i)
             {
-/*20:*/
-#line 551 "dlx1.w"
+                /*20:*/
 
-                o, k = nd[last_node].itm;
-                oo, nd[k].len--, nd[k].aux = i - 1;
-                o, q = nd[last_node].up, r = nd[last_node].down;
-                oo, nd[q].down = r, nd[r].up = q;
+                o, k = dlx->nd[dlx->last_node].itm;
+                oo, dlx->nd[k].len--, dlx->nd[k].aux = i - 1;
+                o, q = dlx->nd[dlx->last_node].up, r = dlx->nd[dlx->last_node].down;
+                oo, dlx->nd[q].down = r, dlx->nd[r].up = q;
 
-/*:20*/
-#line 503 "dlx1.w"
+                /*:20*/
                 ;
-                last_node--;
+                dlx->last_node--;
             }
         }
         else
         {
-            o, nd[i].down = last_node;
-            last_node++;
-            if (last_node == max_nodes)
-                panic("Too many nodes");
-            options++;
-            o, nd[last_node].up = i + 1;
-            o, nd[last_node].itm = -options;
+            o, dlx->nd[i].down = dlx->last_node;
+            dlx->last_node++;
+            if (dlx->last_node == max_nodes)
+                panic(dlx, p, "Too many nodes");
+            dlx->options++;
+            o, dlx->nd[dlx->last_node].up = i + 1;
+            o, dlx->nd[dlx->last_node].itm = -dlx->options;
         }
     }
 
-/*:17*/
-#line 123 "dlx1.w"
+    /*:17*/
     ;
-    if (vbose & show_basics)
-/*21:*/
-#line 557 "dlx1.w"
+    if (dlx->vbose & show_basics)
+        /*21:*/
 
         fprintf(stderr,
                 "(" O "lld options, " O "d+" O "d items, " O "d entries successfully read)\n",
-                options, second - 1, last_itm - second, last_node - last_itm);
+                dlx->options, dlx->second - 1, dlx->last_itm - dlx->second, dlx->last_node - dlx->last_itm);
 
-/*:21*/
-#line 125 "dlx1.w"
+    /*:21*/
     ;
-    if (vbose & show_tots)
-/*22:*/
-#line 566 "dlx1.w"
+    if (dlx->vbose & show_tots)
+    /*22:*/
 
     {
         fprintf(stderr, "Item totals:");
-        for (k = 1; k < last_itm; k++)
+        for (k = 1; k < dlx->last_itm; k++)
         {
-            if (k == second)
+            if (k == dlx->second)
                 fprintf(stderr, " |");
-            fprintf(stderr, " " O "d", nd[k].len);
+            fprintf(stderr, " " O "d", dlx->nd[k].len);
         }
         fprintf(stderr, "\n");
     }
 
-/*:22*/
-#line 127 "dlx1.w"
+    /*:22*/
     ;
-    imems = mems, mems = 0;
-/*23:*/
-#line 593 "dlx1.w"
+    dlx->imems = dlx->mems, dlx->mems = 0;
+    /*23:*/
 
-    level = 0;
+    dlx->level = 0;
 forward:
-    nodes++;
-    if (vbose & show_profile)
-        profile[level]++;
+    dlx->nodes++;
+    if (dlx->vbose & show_profile)
+        dlx->profile[dlx->level]++;
     if (sanity_checking)
-        sanity();
-/*25:*/
-#line 629 "dlx1.w"
+        sanity(dlx);
+    /*25:*/
 
-    if (delta && (mems >= thresh))
+    if (dlx->delta && (dlx->mems >= dlx->thresh))
     {
-        thresh += delta;
-        if (vbose & show_full_state)
-            print_state();
+        dlx->thresh += dlx->delta;
+        if (dlx->vbose & show_full_state)
+            print_state(dlx);
         else
-            print_progress();
+            print_progress(dlx);
     }
-    if (mems >= timeout)
+    if (dlx->mems >= dlx->timeout)
     {
         fprintf(stderr, "TIMEOUT!\n");
         goto done;
     }
 
-/*:25*/
-#line 598 "dlx1.w"
+    /*:25*/
     ;
-/*30:*/
-#line 732 "dlx1.w"
+    /*30:*/
 
-    tmems = mems, t = max_nodes;
-    if ((vbose & show_details) &&
-        level < show_choices_max && level >= maxl - show_choices_gap)
-        fprintf(stderr, "Level " O "d:", level);
-    for (o, k = cl[root].next; t && k != root; o, k = cl[k].next)
+    dlx->tmems = dlx->mems, t = max_nodes;
+    if ((dlx->vbose & show_details) &&
+        dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
+        fprintf(stderr, "dlx->level " O "d:", dlx->level);
+    for (o, k = dlx->cl[root].next; t && k != root; o, k = dlx->cl[k].next)
     {
-        if ((vbose & show_details) &&
-            level < show_choices_max && level >= maxl - show_choices_gap)
-            fprintf(stderr, " " O ".8s(" O "d)", cl[k].name, nd[k].len);
-        if (o, nd[k].len <= t)
+        if ((dlx->vbose & show_details) &&
+            dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
+            fprintf(stderr, " " O ".8s(" O "d)", dlx->cl[k].name, dlx->nd[k].len);
+        if (o, dlx->nd[k].len <= t)
         {
-            if (nd[k].len < t)
-                best_itm = k, t = nd[k].len, p = 1;
+            if (dlx->nd[k].len < t)
+                best_itm = k, t = dlx->nd[k].len, p = 1;
             else
             {
                 p++;
-                if (randomizing && (mems += 4, !gb_unif_rand(p)))
+                if (dlx->randomizing && (dlx->mems += 4, !gb_unif_rand(p)))
                     best_itm = k;
             }
         }
     }
-    if ((vbose & show_details) &&
-        level < show_choices_max && level >= maxl - show_choices_gap)
-        fprintf(stderr, " branching on " O ".8s(" O "d)\n", cl[best_itm].name, t);
-    if (t > maxdeg)
-        maxdeg = t;
-    if (shape_file)
+    if ((dlx->vbose & show_details) &&
+        dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
+        fprintf(stderr, " branching on " O ".8s(" O "d)\n", dlx->cl[best_itm].name, t);
+    if (t > dlx->maxdeg)
+        dlx->maxdeg = t;
+    if (dlx->shape_file)
     {
-        fprintf(shape_file, "" O "d " O ".8s\n", t, cl[best_itm].name);
-        fflush(shape_file);
+        fprintf(dlx->shape_file, "" O "d " O ".8s\n", t, dlx->cl[best_itm].name);
+        fflush(dlx->shape_file);
     }
-    cmems += mems - tmems;
+    dlx->cmems += dlx->mems - dlx->tmems;
 
-/*:30*/
-#line 599 "dlx1.w"
+    /*:30*/
     ;
-    cover(best_itm);
-    oo, cur_node = choice[level] = nd[best_itm].down;
+    cover(dlx, best_itm);
+    oo, cur_node = dlx->choice[dlx->level] = dlx->nd[best_itm].down;
 advance:
     if (cur_node == best_itm)
         goto backup;
-    if ((vbose & show_choices) && level < show_choices_max)
+    if ((dlx->vbose & show_choices) && dlx->level < dlx->show_choices_max)
     {
-        fprintf(stderr, "L" O "d:", level);
-        print_option(cur_node, stderr);
+        fprintf(stderr, "L" O "d:", dlx->level);
+        print_option(dlx, cur_node, stderr);
     }
-/*28:*/
-#line 702 "dlx1.w"
+    /*28:*/
 
     for (pp = cur_node + 1; pp != cur_node;)
     {
-        o, cc = nd[pp].itm;
+        o, cc = dlx->nd[pp].itm;
         if (cc <= 0)
-            o, pp = nd[pp].up;
+            o, pp = dlx->nd[pp].up;
         else
-            cover(cc), pp++;
+            cover(dlx, cc), pp++;
     }
 
-/*:28*/
-#line 607 "dlx1.w"
+    /*:28*/
     ;
-    if (o, cl[root].next == root) /*31:*/
-#line 759 "dlx1.w"
+    if (o, dlx->cl[root].next == root) /*31:*/
 
     {
-        nodes++;
-        if (level + 1 > maxl)
+        dlx->nodes++;
+        if (dlx->level + 1 > dlx->maxl)
         {
-            if (level + 1 >= max_level)
+            if (dlx->level + 1 >= max_level)
             {
                 fprintf(stderr, "Too many levels!\n");
                 exit(-5);
             }
-            maxl = level + 1;
+            dlx->maxl = dlx->level + 1;
         }
-        if (vbose & show_profile)
-            profile[level + 1]++;
-        if (shape_file)
+        if (dlx->vbose & show_profile)
+            dlx->profile[dlx->level + 1]++;
+        if (dlx->shape_file)
         {
-            fprintf(shape_file, "sol\n");
-            fflush(shape_file);
+            fprintf(dlx->shape_file, "sol\n");
+            fflush(dlx->shape_file);
         }
-/*32:*/
-#line 776 "dlx1.w"
+        /*32:*/
 
         {
-            count++;
-            if (spacing && (count mod spacing == 0))
+            dlx->count++;
+            if (dlx->spacing && (dlx->count mod dlx->spacing == 0))
             {
-                printf("" O "lld:\n", count);
-                for (k = 0; k <= level; k++)
-                    print_option(choice[k], stdout);
+                printf("" O "lld:\n", dlx->count);
+                for (k = 0; k <= dlx->level; k++)
+                    print_option(dlx, dlx->choice[k], stdout);
                 fflush(stdout);
             }
-            if (count >= maxcount)
+            if (dlx->count >= dlx->maxcount)
                 goto done;
             goto recover;
         }
 
-/*:32*/
-#line 773 "dlx1.w"
+        /*:32*/
         ;
     }
 
-/*:31*/
-#line 608 "dlx1.w"
+    /*:31*/
     ;
-    if (++level > maxl)
+    if (++dlx->level > dlx->maxl)
     {
-        if (level >= max_level)
+        if (dlx->level >= max_level)
         {
             fprintf(stderr, "Too many levels!\n");
             exit(-4);
         }
-        maxl = level;
+        dlx->maxl = dlx->level;
     }
     goto forward;
 backup:
-    uncover(best_itm);
-    if (level == 0)
+    uncover(dlx, best_itm);
+    if (dlx->level == 0)
         goto done;
-    level--;
-    oo, cur_node = choice[level], best_itm = nd[cur_node].itm;
+    dlx->level--;
+    oo, cur_node = dlx->choice[dlx->level], best_itm = dlx->nd[cur_node].itm;
 recover: /*29:*/
-#line 720 "dlx1.w"
 
     for (pp = cur_node - 1; pp != cur_node;)
     {
-        o, cc = nd[pp].itm;
+        o, cc = dlx->nd[pp].itm;
         if (cc <= 0)
-            o, pp = nd[pp].down;
+            o, pp = dlx->nd[pp].down;
         else
-            uncover(cc), pp--;
+            uncover(dlx, cc), pp--;
     }
 
-/*:29*/
-#line 621 "dlx1.w"
+    /*:29*/
     ;
-    oo, cur_node = choice[level] = nd[cur_node].down;
+    oo, cur_node = dlx->choice[dlx->level] = dlx->nd[cur_node].down;
     goto advance;
 
-/*:23*/
-#line 129 "dlx1.w"
+    /*:23*/
     ;
 done:
-    if (vbose & show_tots)
-/*22:*/
-#line 566 "dlx1.w"
+    if (dlx->vbose & show_tots)
+    /*22:*/
 
     {
         fprintf(stderr, "Item totals:");
-        for (k = 1; k < last_itm; k++)
+        for (k = 1; k < dlx->last_itm; k++)
         {
-            if (k == second)
+            if (k == dlx->second)
                 fprintf(stderr, " |");
-            fprintf(stderr, " " O "d", nd[k].len);
+            fprintf(stderr, " " O "d", dlx->nd[k].len);
         }
         fprintf(stderr, "\n");
     }
 
-/*:22*/
-#line 131 "dlx1.w"
+    /*:22*/
     ;
-    if (vbose & show_profile) /*35:*/
-#line 843 "dlx1.w"
+    if (dlx->vbose & show_profile) /*35:*/
 
     {
         fprintf(stderr, "Profile:\n");
-        for (level = 0; level <= maxl; level++)
+        for (dlx->level = 0; dlx->level <= dlx->maxl; dlx->level++)
             fprintf(stderr, "" O "3d: " O "lld\n",
-                    level, profile[level]);
+                    dlx->level, dlx->profile[dlx->level]);
     }
 
-/*:35*/
-#line 132 "dlx1.w"
+    /*:35*/
     ;
-    if (vbose & show_max_deg)
-        fprintf(stderr, "The maximum branching degree was " O "d.\n", maxdeg);
-    if (vbose & show_basics)
+    if (dlx->vbose & show_max_deg)
+        fprintf(stderr, "The maximum branching degree was " O "d.\n", dlx->maxdeg);
+    if (dlx->vbose & show_basics)
     {
         fprintf(stderr, "Altogether " O "llu solution" O "s, " O "llu+" O "llu mems,",
-                count, count == 1 ? "" : "s", imems, mems);
-        bytes = last_itm * sizeof(item) + last_node * sizeof(node) + maxl * sizeof(int);
+                dlx->count, dlx->count == 1 ? "" : "s", dlx->imems, dlx->mems);
+        dlx->bytes = dlx->last_itm * sizeof(dlxItem_t) + dlx->last_node * sizeof(dlxNode_t) + dlx->maxl * sizeof(int);
         fprintf(stderr, " " O "llu updates, " O "llu bytes, " O "llu nodes,",
-                updates, bytes, nodes);
+                dlx->updates, dlx->bytes, dlx->nodes);
         fprintf(stderr, " ccost " O "lld%%.\n",
-                (200 * cmems + mems) / (2 * mems));
+                (200 * dlx->cmems + dlx->mems) / (2 * dlx->mems));
     }
-/*5:*/
-#line 247 "dlx1.w"
+    /*5:*/
 
-    if (shape_file)
-        fclose(shape_file);
+    if (dlx->shape_file)
+        fclose(dlx->shape_file);
 
-/*:5*/
-#line 144 "dlx1.w"
+    /*:5*/
     ;
 }
 
 /*:2*/
+
+void dlx1(int argc, char **argv)
+{
+    dlxState_t *dlx = (dlxState_t *)malloc(sizeof(dlxState_t));
+
+    dlx1_do(dlx, argc, argv);
+
+    free(dlx);
+}
