@@ -20,6 +20,8 @@
 
 #define max_name_length 64
 
+#include <stdio.h>
+
 typedef unsigned int uint;
 typedef unsigned long long ullng;
 
@@ -73,4 +75,18 @@ typedef struct dlxState_s
     ullng profile[max_level];
 } dlxState_t;
 
-void dlx1(int, char **);
+typedef void (*panic_t)(dlxState_t *, int, char *, void *);
+
+typedef struct dlxInput_s
+{
+    int argc;
+    char **argv;
+
+    panic_t panic;
+    void *panic_ud;
+
+    FILE *device_in;
+
+} dlxInput_t;
+
+void dlx1(dlxInput_t *);

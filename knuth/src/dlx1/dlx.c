@@ -8,7 +8,18 @@
 
 int main(int argc, char *argv[])
 {
-    dlx1(argc, argv);
+    dlxInput_t *input = (dlxInput_t *)malloc(sizeof(dlxInput_t));
+    input->argc = argc;
+    input->argv = argv;
+
+    input->panic = NULL; // to use the default panic function.
+    input->panic_ud = NULL;
+
+    input->device_in = stdin;
+
+    dlx1(input);
+
+    free(input);
 
     return 0;
 }
