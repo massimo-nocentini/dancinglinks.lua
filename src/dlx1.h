@@ -73,6 +73,11 @@ typedef struct dlxState_s
     int level;
     int choice[max_level];
     ullng profile[max_level];
+
+    FILE *stream_in;
+    FILE *stream_out;
+    FILE *stream_error;
+    
 } dlxState_t;
 
 typedef void (*panic_t)(dlxState_t *, int, char *, void *);
