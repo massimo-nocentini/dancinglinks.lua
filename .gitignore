@@ -8,3 +8,4 @@ knuth/src/dlx1/libdlx1.so
 knuth/test/queens/queens-dlx.pdf
 knuth/test/queens/queens-dlx.idx
 knuth/test/queens/queens-dlx
+test/tree.txt

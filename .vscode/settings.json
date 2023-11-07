@@ -12,6 +12,10 @@
         "ctype.h": "c",
         "features.h": "c",
         "string.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "span": "c"
     }
 }

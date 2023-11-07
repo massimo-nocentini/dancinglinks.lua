@@ -77,21 +77,5 @@ typedef struct dlxState_s
     FILE *stream_in;
     FILE *stream_out;
     FILE *stream_error;
-    
+
 } dlxState_t;
-
-typedef void (*panic_t)(dlxState_t *, int, char *, void *);
-
-typedef struct dlxInput_s
-{
-    int argc;
-    char **argv;
-
-    panic_t panic;
-    void *panic_ud;
-
-    FILE *device_in;
-
-} dlxInput_t;
-
-void dlx1(dlxInput_t *);

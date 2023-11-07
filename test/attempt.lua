@@ -1,6 +1,7 @@
 
+local dlx = require 'dlx'
 
-local co = dlx1.coroutine {
+local co = dlx.dlx1 {
     stdout = nil, -- default to actual stdout,
     stderr = nil,   -- default to actual stderr.
     -- either

@@ -12,15 +12,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <assert.h>
 #include <ctype.h>
 #include <gb_flip.h>
 
+#include <lua.h>
+#include <lauxlib.h>
+
 #include "dlx1.h"
 
-void default_panic(dlxState_t *dlx, int p, char *m, void *ud)
+void panic(dlxState_t *dlx, int p, char *m, lua_State *L)
 {
     fprintf(stderr, "" O "s!\n" O "d: " O ".99s\n", m, p, dlx->buf);
-    exit(-1);
+    luaL_error(L, "" O "s!\n" O "d: " O ".99s\n", m, p, dlx->buf);
 }
 
 void print_option(dlxState_t *dlx, int p, FILE *stream)
@@ -191,11 +196,11 @@ void print_progress(dlxState_t *dlx)
     fprintf(stderr, " " O ".5f\n", f + 0.5 / fd);
 }
 
-void dlx1_do(dlxInput_t *input, dlxState_t *dlx)
+void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
 {
-    panic_t panic = input->panic == NULL ? &default_panic : input->panic;
-
     int cc, i, j, k, p, pp, q, r, t, cur_node, best_itm;
+
+    p = best_itm = -1;
 
     dlx->random_seed = 0;
     dlx->vbose = show_basics + show_warnings;
@@ -209,38 +214,38 @@ void dlx1_do(dlxInput_t *input, dlxState_t *dlx)
     dlx->timeout = 0x1fffffffffffffff;
     dlx->second = max_cols;
 
-    for (j = input->argc - 1, k = 0; j; j--)
-        switch (input->argv[j][0])
+    for (j = argc - 1, k = 0; j; j--)
+        switch (argv[j][0])
         {
         case 'v':
-            k |= (sscanf(input->argv[j] + 1, "" O "d", &(dlx->vbose)) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->vbose)) - 1);
             break;
         case 'm':
-            k |= (sscanf(input->argv[j] + 1, "" O "d", &(dlx->spacing)) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->spacing)) - 1);
             break;
         case 's':
-            k |= (sscanf(input->argv[j] + 1, "" O "d", &(dlx->random_seed)) - 1), dlx->randomizing = 1;
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->random_seed)) - 1), dlx->randomizing = 1;
             break;
         case 'd':
-            k |= (sscanf(input->argv[j] + 1, "" O "lld", &(dlx->delta)) - 1), dlx->thresh = dlx->delta;
+            k |= (sscanf(argv[j] + 1, "" O "lld", &(dlx->delta)) - 1), dlx->thresh = dlx->delta;
             break;
         case 'c':
-            k |= (sscanf(input->argv[j] + 1, "" O "d", &(dlx->show_choices_max)) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->show_choices_max)) - 1);
             break;
         case 'C':
-            k |= (sscanf(input->argv[j] + 1, "" O "d", &(dlx->show_levels_max)) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->show_levels_max)) - 1);
             break;
         case 'l':
-            k |= (sscanf(input->argv[j] + 1, "" O "d", &(dlx->show_choices_gap)) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->show_choices_gap)) - 1);
             break;
         case 't':
-            k |= (sscanf(input->argv[j] + 1, "" O "lld", &(dlx->maxcount)) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "lld", &(dlx->maxcount)) - 1);
             break;
         case 'T':
-            k |= (sscanf(input->argv[j] + 1, "" O "lld", &(dlx->timeout)) - 1);
+            k |= (sscanf(argv[j] + 1, "" O "lld", &(dlx->timeout)) - 1);
             break;
         case 'S':
-            dlx->shape_name = input->argv[j] + 1, dlx->shape_file = fopen(dlx->shape_name, "w");
+            dlx->shape_name = argv[j] + 1, dlx->shape_file = fopen(dlx->shape_name, "w");
             if (!dlx->shape_file)
                 fprintf(stderr, "Sorry, I can't open file `" O "s' for writing!\n",
                         dlx->shape_name);
@@ -252,7 +257,7 @@ void dlx1_do(dlxInput_t *input, dlxState_t *dlx)
     {
         fprintf(stderr, "Usage: " O "s [v<n>] [m<n>] [s<n>] [d<n>]"
                         " [c<n>] [C<n>] [l<n>] [t<n>] [T<n>] [S<bar>] < foo.dlx\n",
-                input->argv[0]);
+                argv[0]);
         exit(-1);
     }
     if (dlx->randomizing)
@@ -265,10 +270,10 @@ void dlx1_do(dlxInput_t *input, dlxState_t *dlx)
     }
     while (1)
     {
-        if (!fgets(dlx->buf, bufsize, input->device_in))
+        if (!fgets(dlx->buf, bufsize, dlx->stream_in))
             break;
         if (o, dlx->buf[p = strlen(dlx->buf) - 1] != '\n')
-            panic(dlx, p, "Input line way too long", input->panic_ud);
+            panic(dlx, p, "Input line way too long", L);
         for (p = 0; o, isspace(dlx->buf[p]); p++)
             ;
         if (dlx->buf[p] == '|' || !dlx->buf[p])
@@ -277,25 +282,25 @@ void dlx1_do(dlxInput_t *input, dlxState_t *dlx)
         break;
     }
     if (!dlx->last_itm)
-        panic(dlx, p, "No items", input->panic_ud);
+        panic(dlx, p, "No items", L);
     for (; o, dlx->buf[p];)
     {
         for (j = 0; j < max_name_length && (o, !isspace(dlx->buf[p + j])); j++)
         {
             if (dlx->buf[p + j] == ':' || dlx->buf[p + j] == '|')
-                panic(dlx, p, "Illegal character in item name", input->panic_ud);
+                panic(dlx, p, "Illegal character in item name", L);
             o, dlx->cl[dlx->last_itm].name[j] = dlx->buf[p + j];
         }
         if (j == max_name_length && !isspace(dlx->buf[p + j]))
-            panic(dlx, p, "Item name too long", input->panic_ud);
+            panic(dlx, p, "Item name too long", L);
 
         for (k = 1; o, strncmp(dlx->cl[k].name, dlx->cl[dlx->last_itm].name, max_name_length); k++)
             ;
         if (k < dlx->last_itm)
-            panic(dlx, p, "Duplicate item name", input->panic_ud);
+            panic(dlx, p, "Duplicate item name", L);
 
         if (dlx->last_itm > max_cols)
-            panic(dlx, p, "Too many items", input->panic_ud);
+            panic(dlx, p, "Too many items", L);
         oo, dlx->cl[dlx->last_itm - 1].next = dlx->last_itm, dlx->cl[dlx->last_itm].prev = dlx->last_itm - 1;
 
         o, dlx->nd[dlx->last_itm].up = dlx->nd[dlx->last_itm].down = dlx->last_itm;
@@ -306,7 +311,7 @@ void dlx1_do(dlxInput_t *input, dlxState_t *dlx)
         if (dlx->buf[p] == '|')
         {
             if (dlx->second != max_cols)
-                panic(dlx, p, "Item name line contains | twice", input->panic_ud);
+                panic(dlx, p, "Item name line contains | twice", L);
             dlx->second = dlx->last_itm;
             for (p++; o, isspace(dlx->buf[p]); p++)
                 ;
@@ -322,10 +327,10 @@ void dlx1_do(dlxInput_t *input, dlxState_t *dlx)
 
     while (1)
     {
-        if (!fgets(dlx->buf, bufsize, input->device_in))
+        if (!fgets(dlx->buf, bufsize, dlx->stream_in))
             break;
         if (o, dlx->buf[p = strlen(dlx->buf) - 1] != '\n')
-            panic(dlx, p, "Option line too long", input->panic_ud);
+            panic(dlx, p, "Option line too long", L);
         for (p = 0; o, isspace(dlx->buf[p]); p++)
             ;
         if (dlx->buf[p] == '|' || !dlx->buf[p])
@@ -336,19 +341,19 @@ void dlx1_do(dlxInput_t *input, dlxState_t *dlx)
             for (j = 0; j < max_name_length && (o, !isspace(dlx->buf[p + j])); j++)
                 o, dlx->cl[dlx->last_itm].name[j] = dlx->buf[p + j];
             if (j == max_name_length && !isspace(dlx->buf[p + j]))
-                panic(dlx, p, "Item name too long", input->panic_ud);
+                panic(dlx, p, "Item name too long", L);
             if (j < max_name_length)
                 o, dlx->cl[dlx->last_itm].name[j] = '\0';
 
             for (k = 0; o, strncmp(dlx->cl[k].name, dlx->cl[dlx->last_itm].name, max_name_length); k++)
                 ;
             if (k == dlx->last_itm)
-                panic(dlx, p, "Unknown item name", input->panic_ud);
+                panic(dlx, p, "Unknown item name", L);
             if (o, dlx->nd[k].aux >= i)
-                panic(dlx, p, "Duplicate item name in this option", input->panic_ud);
+                panic(dlx, p, "Duplicate item name in this option", L);
             dlx->last_node++;
             if (dlx->last_node == max_nodes)
-                panic(dlx, p, "Too many nodes", input->panic_ud);
+                panic(dlx, p, "Too many nodes", L);
             o, dlx->nd[dlx->last_node].itm = k;
             if (k < dlx->second)
                 pp = 1;
@@ -393,7 +398,7 @@ void dlx1_do(dlxInput_t *input, dlxState_t *dlx)
             o, dlx->nd[i].down = dlx->last_node;
             dlx->last_node++;
             if (dlx->last_node == max_nodes)
-                panic(dlx, p, "Too many nodes", input->panic_ud);
+                panic(dlx, p, "Too many nodes", L);
             dlx->options++;
             o, dlx->nd[dlx->last_node].up = i + 1;
             o, dlx->nd[dlx->last_node].itm = -dlx->options;
@@ -598,11 +603,92 @@ done:
         fclose(dlx->shape_file);
 }
 
-void dlx1(dlxInput_t *input)
+/*
+    This function consumes a table of strings that denotes the arguments to the solver.
+*/
+int l_create(lua_State *L)
 {
+    char close_flags = 0;
+    int type;
+
+    lua_Integer argc = lua_tointeger(L, 1);
+
+    char **argv = (char **)malloc(sizeof(char *) * argc);
+
+    for (int i = 1; i <= argc; i++)
+    {
+        type = lua_rawgeti(L, 2, i);
+        assert(type == LUA_TSTRING);
+
+        argv[i - 1] = (char *)lua_tostring(L, -1);
+        lua_pop(L, 1);
+    }
+
     dlxState_t *dlx = (dlxState_t *)malloc(sizeof(dlxState_t));
 
-    dlx1_do(input, dlx);
+    // stdin
+    if (lua_isnoneornil(L, 3))
+    {
+        dlx->stream_in = stdin;
+    }
+    else
+    {
+        dlx->stream_in = fopen(lua_tostring(L, 3), "r");
+        close_flags |= 1;
+    }
+
+    // stdout
+    if (lua_isnoneornil(L, 4))
+    {
+        dlx->stream_out = stdout;
+    }
+    else
+    {
+        dlx->stream_out = fopen(lua_tostring(L, 4), "r");
+        close_flags |= 2;
+    }
+
+    // stderr
+    if (lua_isnoneornil(L, 5))
+    {
+        dlx->stream_error = stderr;
+    }
+    else
+    {
+        dlx->stream_error = fopen(lua_tostring(L, 5), "r");
+        close_flags |= 4;
+    }
+
+    dlx1_do(L, dlx, argc, argv);
+
+    if (close_flags & 1)
+    {
+        fclose(dlx->stream_in);
+    }
+
+    if (close_flags & 2)
+    {
+        fclose(dlx->stream_out);
+    }
+
+    if (close_flags & 4)
+    {
+        fclose(dlx->stream_error);
+    }
 
     free(dlx);
+
+    return 0;
+}
+
+const struct luaL_Reg libdlx1[] = {
+    {"create", l_create},
+    {NULL, NULL} /* sentinel */
+};
+
+int luaopen_libdlx1(lua_State *L) // the initialization function of the module.
+{
+    luaL_newlib(L, libdlx1);
+
+    return 1;
 }
