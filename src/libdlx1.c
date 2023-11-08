@@ -93,10 +93,10 @@ void print_itm(lua_State *L, dlxState_t *dlx, int c)
         return;
     }
     if (c < dlx->second)
-        fprintf(dlx->stream_err, "Item " O ".8s, length " O "d, neighbors " O ".8s and " O ".8s:\n",
+        fprintf(dlx->stream_err, "Item " O "s, length " O "d, neighbors " O "s and " O "s:\n",
                 dlx->cl[c].name, dlx->nd[c].len, dlx->cl[dlx->cl[c].prev].name, dlx->cl[dlx->cl[c].next].name);
     else
-        fprintf(dlx->stream_err, "Item " O ".8s, length " O "d:\n", dlx->cl[c].name, dlx->nd[c].len);
+        fprintf(dlx->stream_err, "Item " O "s, length " O "d:\n", dlx->cl[c].name, dlx->nd[c].len);
     for (p = dlx->nd[c].down; p >= dlx->last_itm; p = dlx->nd[p].down)
         prow(L, dlx, p);
 }
@@ -107,7 +107,7 @@ void sanity(dlxState_t *dlx)
     for (q = root, p = dlx->cl[q].next;; q = p, p = dlx->cl[p].next)
     {
         if (dlx->cl[p].prev != q)
-            fprintf(dlx->stream_err, "Bad prev field at itm " O ".8s!\n",
+            fprintf(dlx->stream_err, "Bad prev field at itm " O "s!\n",
                     dlx->cl[p].name);
         if (p == root)
             break;
@@ -122,7 +122,7 @@ void sanity(dlxState_t *dlx)
                 fprintf(dlx->stream_err, "Bad itm field at node " O "d!\n", pp);
         }
         if (dlx->nd[p].len != k)
-            fprintf(dlx->stream_err, "Bad len field in item " O ".8s!\n",
+            fprintf(dlx->stream_err, "Bad len field in item " O "s!\n",
                     dlx->cl[p].name);
     }
 }
@@ -490,7 +490,7 @@ forward:
     {
         if ((dlx->vbose & show_details) &&
             dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
-            fprintf(dlx->stream_err, " " O ".8s(" O "d)", dlx->cl[kcontext->k].name, dlx->nd[kcontext->k].len);
+            fprintf(dlx->stream_err, " " O "s(" O "d)", dlx->cl[kcontext->k].name, dlx->nd[kcontext->k].len);
         if (o, dlx->nd[kcontext->k].len <= kcontext->t)
         {
             if (dlx->nd[kcontext->k].len < kcontext->t)
@@ -505,12 +505,12 @@ forward:
     }
     if ((dlx->vbose & show_details) &&
         dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
-        fprintf(dlx->stream_err, " branching on " O ".8s(" O "d)\n", dlx->cl[kcontext->best_itm].name, kcontext->t);
+        fprintf(dlx->stream_err, " branching on " O "s(" O "d)\n", dlx->cl[kcontext->best_itm].name, kcontext->t);
     if (kcontext->t > dlx->maxdeg)
         dlx->maxdeg = kcontext->t;
     if (dlx->shape_file)
     {
-        fprintf(dlx->shape_file, "" O "d " O ".8s\n", kcontext->t, dlx->cl[kcontext->best_itm].name);
+        fprintf(dlx->shape_file, "" O "d " O "s\n", kcontext->t, dlx->cl[kcontext->best_itm].name);
         fflush(dlx->shape_file);
     }
     dlx->cmems += dlx->mems - dlx->tmems;
