@@ -24,11 +24,11 @@
 
 void panic(dlxState_t *dlx, int p, char *m, lua_State *L)
 {
-    fprintf(dlx->stream_err, "" O "s!\n" O "d: " O ".99s\n", m, p, dlx->buf);
+    fprintf(dlx->stream_err, "" O "s!\n" O "d: " O "s\n", m, p, dlx->buf);
     luaL_error(L, "" O "s!\n" O "d: " O "s", m, p, dlx->buf);
 }
 
-void print_option(dlxState_t *dlx, int p, FILE *stream)
+void print_option(lua_State *L, dlxState_t *dlx, int p, FILE *stream, int sol_pos)
 {
     int k, q;
     if (p < dlx->last_itm || p >= dlx->last_node || dlx->nd[p].itm <= 0)
@@ -36,9 +36,20 @@ void print_option(dlxState_t *dlx, int p, FILE *stream)
         fprintf(dlx->stream_err, "Illegal option " O "d!\n", p);
         return;
     }
+
+    char *itm_name = NULL;
+
+    luaL_Buffer b;
+    luaL_buffinit(L, &b);
+
     for (q = p;;)
     {
-        fprintf(stream, " " O ".8s", dlx->cl[dlx->nd[q].itm].name);
+        itm_name = dlx->cl[dlx->nd[q].itm].name;
+
+        luaL_addchar(&b, ' ');
+        luaL_addstring(&b, itm_name);
+
+        fprintf(stream, " " O "s", itm_name);
         q++;
         if (dlx->nd[q].itm <= 0)
             q = dlx->nd[q].up;
@@ -56,14 +67,24 @@ void print_option(dlxState_t *dlx, int p, FILE *stream)
             q = dlx->nd[q].down;
     }
     fprintf(stream, " (" O "d of " O "d)\n", k, dlx->nd[dlx->nd[p].itm].len);
+
+    luaL_pushresult(&b);
+    if (sol_pos > 0)
+    {
+        lua_seti(L, -2, sol_pos);
+    }
+    else
+    {
+        lua_pop(L, 1);
+    }
 }
 
-void prow(dlxState_t *dlx, int p)
+void prow(lua_State *L, dlxState_t *dlx, int p)
 {
-    print_option(dlx, p, dlx->stream_err);
+    print_option(L, dlx, p, dlx->stream_err, 0);
 }
 
-void print_itm(dlxState_t *dlx, int c)
+void print_itm(lua_State *L, dlxState_t *dlx, int c)
 {
     int p;
     if (c < root || c >= dlx->last_itm)
@@ -77,7 +98,7 @@ void print_itm(dlxState_t *dlx, int c)
     else
         fprintf(dlx->stream_err, "Item " O ".8s, length " O "d:\n", dlx->cl[c].name, dlx->nd[c].len);
     for (p = dlx->nd[c].down; p >= dlx->last_itm; p = dlx->nd[p].down)
-        prow(dlx, p);
+        prow(L, dlx, p);
 }
 
 void sanity(dlxState_t *dlx)
@@ -152,13 +173,13 @@ void uncover(dlxState_t *dlx, int c)
     oo, dlx->cl[l].next = dlx->cl[r].prev = c;
 }
 
-void print_state(dlxState_t *dlx)
+void print_state(lua_State *L, dlxState_t *dlx)
 {
     int l;
     fprintf(dlx->stream_err, "Current state (level " O "d):\n", dlx->level);
     for (l = 0; l < dlx->level; l++)
     {
-        print_option(dlx, dlx->choice[l], dlx->stream_err);
+        print_option(L, dlx, dlx->choice[l], dlx->stream_err, 0);
         if (l >= dlx->show_levels_max)
         {
             fprintf(dlx->stream_err, " ...\n");
@@ -196,11 +217,23 @@ void print_progress(dlxState_t *dlx)
     fprintf(dlx->stream_err, " " O ".5f\n", f + 0.5 / fd);
 }
 
-void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
+typedef struct dlx1_KContext_m
 {
+    int argc;
+    char **argv;
+    int close_flags;
     int cc, i, j, k, p, pp, q, r, t, cur_node, best_itm;
+} dlx1_KContext_t;
 
-    p = best_itm = -1;
+int dlx1_kfunction(lua_State *L, int status, lua_KContext ctx)
+{
+    dlxState_t *dlx = (dlxState_t *)lua_touserdata(L, lua_upvalueindex(1));
+    dlx1_KContext_t *kcontext = (dlx1_KContext_t *)lua_touserdata(L, lua_upvalueindex(2));
+
+    if (status == LUA_YIELD)
+        goto resume;
+
+    kcontext->p = kcontext->best_itm = -1;
 
     dlx->random_seed = 0;
     dlx->vbose = show_basics + show_warnings;
@@ -214,54 +247,54 @@ void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
     dlx->timeout = 0x1fffffffffffffff;
     dlx->second = max_cols;
 
-    for (j = argc - 1, k = 0; j; j--)
-        switch (argv[j][0])
+    for (kcontext->j = kcontext->argc - 1, kcontext->k = 0; kcontext->j; kcontext->j--)
+        switch (kcontext->argv[kcontext->j][0])
         {
         case 'v':
-            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->vbose)) - 1);
+            kcontext->k |= (sscanf(kcontext->argv[kcontext->j] + 1, "" O "d", &(dlx->vbose)) - 1);
             break;
         case 'm':
-            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->spacing)) - 1);
+            kcontext->k |= (sscanf(kcontext->argv[kcontext->j] + 1, "" O "d", &(dlx->spacing)) - 1);
             break;
         case 's':
-            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->random_seed)) - 1), dlx->randomizing = 1;
+            kcontext->k |= (sscanf(kcontext->argv[kcontext->j] + 1, "" O "d", &(dlx->random_seed)) - 1), dlx->randomizing = 1;
             break;
         case 'd':
-            k |= (sscanf(argv[j] + 1, "" O "lld", &(dlx->delta)) - 1), dlx->thresh = dlx->delta;
+            kcontext->k |= (sscanf(kcontext->argv[kcontext->j] + 1, "" O "lld", &(dlx->delta)) - 1), dlx->thresh = dlx->delta;
             break;
         case 'c':
-            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->show_choices_max)) - 1);
+            kcontext->k |= (sscanf(kcontext->argv[kcontext->j] + 1, "" O "d", &(dlx->show_choices_max)) - 1);
             break;
         case 'C':
-            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->show_levels_max)) - 1);
+            kcontext->k |= (sscanf(kcontext->argv[kcontext->j] + 1, "" O "d", &(dlx->show_levels_max)) - 1);
             break;
         case 'l':
-            k |= (sscanf(argv[j] + 1, "" O "d", &(dlx->show_choices_gap)) - 1);
+            kcontext->k |= (sscanf(kcontext->argv[kcontext->j] + 1, "" O "d", &(dlx->show_choices_gap)) - 1);
             break;
         case 't':
-            k |= (sscanf(argv[j] + 1, "" O "lld", &(dlx->maxcount)) - 1);
+            kcontext->k |= (sscanf(kcontext->argv[kcontext->j] + 1, "" O "lld", &(dlx->maxcount)) - 1);
             break;
         case 'T':
-            k |= (sscanf(argv[j] + 1, "" O "lld", &(dlx->timeout)) - 1);
+            kcontext->k |= (sscanf(kcontext->argv[kcontext->j] + 1, "" O "lld", &(dlx->timeout)) - 1);
             break;
         case 'S':
-            dlx->shape_name = argv[j] + 1, dlx->shape_file = fopen(dlx->shape_name, "w");
+            dlx->shape_name = kcontext->argv[kcontext->j] + 1, dlx->shape_file = fopen(dlx->shape_name, "w");
             if (!dlx->shape_file)
                 fprintf(dlx->stream_err, "Sorry, I can't open file `" O "s' for writing!\n",
                         dlx->shape_name);
             break;
         default:
-            k = 1;
+            kcontext->k = 1;
         }
-    if (k)
+    if (kcontext->k)
     {
         fprintf(dlx->stream_err, "Usage: " O "s [v<n>] [m<n>] [s<n>] [d<n>]"
                                  " [c<n>] [C<n>] [l<n>] [t<n>] [T<n>] [S<bar>] < foo.dlx\n",
-                argv[0]);
+                kcontext->argv[0]);
 
         luaL_error(L, "Usage: " O "s [v<n>] [m<n>] [s<n>] [d<n>]"
                       " [c<n>] [C<n>] [l<n>] [t<n>] [T<n>] [S<bar>] < foo.dlx",
-                   argv[0]);
+                   kcontext->argv[0]);
     }
     if (dlx->randomizing)
         gb_init_rand(dlx->random_seed);
@@ -275,48 +308,48 @@ void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
     {
         if (!fgets(dlx->buf, bufsize, dlx->stream_in))
             break;
-        if (o, dlx->buf[p = strlen(dlx->buf) - 1] != '\n')
-            panic(dlx, p, "Input line way too long", L);
-        for (p = 0; o, isspace(dlx->buf[p]); p++)
+        if (o, dlx->buf[kcontext->p = strlen(dlx->buf) - 1] != '\n')
+            panic(dlx, kcontext->p, "Input line way too long", L);
+        for (kcontext->p = 0; o, isspace(dlx->buf[kcontext->p]); kcontext->p++)
             ;
-        if (dlx->buf[p] == '|' || !dlx->buf[p])
+        if (dlx->buf[kcontext->p] == '|' || !dlx->buf[kcontext->p])
             continue;
         dlx->last_itm = 1;
         break;
     }
     if (!dlx->last_itm)
-        panic(dlx, p, "No items", L);
-    for (; o, dlx->buf[p];)
+        panic(dlx, kcontext->p, "No items", L);
+    for (; o, dlx->buf[kcontext->p];)
     {
-        for (j = 0; j < max_name_length && (o, !isspace(dlx->buf[p + j])); j++)
+        for (kcontext->j = 0; kcontext->j < max_name_length && (o, !isspace(dlx->buf[kcontext->p + kcontext->j])); kcontext->j++)
         {
-            if (dlx->buf[p + j] == ':' || dlx->buf[p + j] == '|')
-                panic(dlx, p, "Illegal character in item name", L);
-            o, dlx->cl[dlx->last_itm].name[j] = dlx->buf[p + j];
+            if (dlx->buf[kcontext->p + kcontext->j] == ':' || dlx->buf[kcontext->p + kcontext->j] == '|')
+                panic(dlx, kcontext->p, "Illegal character in item name", L);
+            o, dlx->cl[dlx->last_itm].name[kcontext->j] = dlx->buf[kcontext->p + kcontext->j];
         }
-        if (j == max_name_length && !isspace(dlx->buf[p + j]))
-            panic(dlx, p, "Item name too long", L);
+        if (kcontext->j == max_name_length && !isspace(dlx->buf[kcontext->p + kcontext->j]))
+            panic(dlx, kcontext->p, "Item name too long", L);
 
-        for (k = 1; o, strncmp(dlx->cl[k].name, dlx->cl[dlx->last_itm].name, max_name_length); k++)
+        for (kcontext->k = 1; o, strncmp(dlx->cl[kcontext->k].name, dlx->cl[dlx->last_itm].name, max_name_length); kcontext->k++)
             ;
-        if (k < dlx->last_itm)
-            panic(dlx, p, "Duplicate item name", L);
+        if (kcontext->k < dlx->last_itm)
+            panic(dlx, kcontext->p, "Duplicate item name", L);
 
         if (dlx->last_itm > max_cols)
-            panic(dlx, p, "Too many items", L);
+            panic(dlx, kcontext->p, "Too many items", L);
         oo, dlx->cl[dlx->last_itm - 1].next = dlx->last_itm, dlx->cl[dlx->last_itm].prev = dlx->last_itm - 1;
 
         o, dlx->nd[dlx->last_itm].up = dlx->nd[dlx->last_itm].down = dlx->last_itm;
         dlx->last_itm++;
 
-        for (p += j + 1; o, isspace(dlx->buf[p]); p++)
+        for (kcontext->p += kcontext->j + 1; o, isspace(dlx->buf[kcontext->p]); kcontext->p++)
             ;
-        if (dlx->buf[p] == '|')
+        if (dlx->buf[kcontext->p] == '|')
         {
             if (dlx->second != max_cols)
-                panic(dlx, p, "Item name line contains | twice", L);
+                panic(dlx, kcontext->p, "Item name line contains | twice", L);
             dlx->second = dlx->last_itm;
-            for (p++; o, isspace(dlx->buf[p]); p++)
+            for (kcontext->p++; o, isspace(dlx->buf[kcontext->p]); kcontext->p++)
                 ;
         }
     }
@@ -332,78 +365,78 @@ void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
     {
         if (!fgets(dlx->buf, bufsize, dlx->stream_in))
             break;
-        if (o, dlx->buf[p = strlen(dlx->buf) - 1] != '\n')
-            panic(dlx, p, "Option line too long", L);
-        for (p = 0; o, isspace(dlx->buf[p]); p++)
+        if (o, dlx->buf[kcontext->p = strlen(dlx->buf) - 1] != '\n')
+            panic(dlx, kcontext->p, "Option line too long", L);
+        for (kcontext->p = 0; o, isspace(dlx->buf[kcontext->p]); kcontext->p++)
             ;
-        if (dlx->buf[p] == '|' || !dlx->buf[p])
+        if (dlx->buf[kcontext->p] == '|' || !dlx->buf[kcontext->p])
             continue;
-        i = dlx->last_node;
-        for (pp = 0; dlx->buf[p];)
+        kcontext->i = dlx->last_node;
+        for (kcontext->pp = 0; dlx->buf[kcontext->p];)
         {
-            for (j = 0; j < max_name_length && (o, !isspace(dlx->buf[p + j])); j++)
-                o, dlx->cl[dlx->last_itm].name[j] = dlx->buf[p + j];
-            if (j == max_name_length && !isspace(dlx->buf[p + j]))
-                panic(dlx, p, "Item name too long", L);
-            if (j < max_name_length)
-                o, dlx->cl[dlx->last_itm].name[j] = '\0';
+            for (kcontext->j = 0; kcontext->j < max_name_length && (o, !isspace(dlx->buf[kcontext->p + kcontext->j])); kcontext->j++)
+                o, dlx->cl[dlx->last_itm].name[kcontext->j] = dlx->buf[kcontext->p + kcontext->j];
+            if (kcontext->j == max_name_length && !isspace(dlx->buf[kcontext->p + kcontext->j]))
+                panic(dlx, kcontext->p, "Item name too long", L);
+            if (kcontext->j < max_name_length)
+                o, dlx->cl[dlx->last_itm].name[kcontext->j] = '\0';
 
-            for (k = 0; o, strncmp(dlx->cl[k].name, dlx->cl[dlx->last_itm].name, max_name_length); k++)
+            for (kcontext->k = 0; o, strncmp(dlx->cl[kcontext->k].name, dlx->cl[dlx->last_itm].name, max_name_length); kcontext->k++)
                 ;
-            if (k == dlx->last_itm)
-                panic(dlx, p, "Unknown item name", L);
-            if (o, dlx->nd[k].aux >= i)
-                panic(dlx, p, "Duplicate item name in this option", L);
+            if (kcontext->k == dlx->last_itm)
+                panic(dlx, kcontext->p, "Unknown item name", L);
+            if (o, dlx->nd[kcontext->k].aux >= kcontext->i)
+                panic(dlx, kcontext->p, "Duplicate item name in this option", L);
             dlx->last_node++;
             if (dlx->last_node == max_nodes)
-                panic(dlx, p, "Too many nodes", L);
-            o, dlx->nd[dlx->last_node].itm = k;
-            if (k < dlx->second)
-                pp = 1;
-            o, t = dlx->nd[k].len + 1;
+                panic(dlx, kcontext->p, "Too many nodes", L);
+            o, dlx->nd[dlx->last_node].itm = kcontext->k;
+            if (kcontext->k < dlx->second)
+                kcontext->pp = 1;
+            o, kcontext->t = dlx->nd[kcontext->k].len + 1;
 
-            o, dlx->nd[k].len = t;
-            dlx->nd[k].aux = dlx->last_node;
+            o, dlx->nd[kcontext->k].len = kcontext->t;
+            dlx->nd[kcontext->k].aux = dlx->last_node;
             if (!dlx->randomizing)
             {
-                o, r = dlx->nd[k].up;
-                ooo, dlx->nd[r].down = dlx->nd[k].up = dlx->last_node, dlx->nd[dlx->last_node].up = r, dlx->nd[dlx->last_node].down = k;
+                o, kcontext->r = dlx->nd[kcontext->k].up;
+                ooo, dlx->nd[kcontext->r].down = dlx->nd[kcontext->k].up = dlx->last_node, dlx->nd[dlx->last_node].up = kcontext->r, dlx->nd[dlx->last_node].down = kcontext->k;
             }
             else
             {
-                dlx->mems += 4, t = gb_unif_rand(t);
-                for (o, r = k; t; o, r = dlx->nd[r].down, t--)
+                dlx->mems += 4, kcontext->t = gb_unif_rand(kcontext->t);
+                for (o, kcontext->r = kcontext->k; kcontext->t; o, kcontext->r = dlx->nd[kcontext->r].down, kcontext->t--)
                     ;
-                ooo, q = dlx->nd[r].up, dlx->nd[q].down = dlx->nd[r].up = dlx->last_node;
-                o, dlx->nd[dlx->last_node].up = q, dlx->nd[dlx->last_node].down = r;
+                ooo, kcontext->q = dlx->nd[kcontext->r].up, dlx->nd[kcontext->q].down = dlx->nd[kcontext->r].up = dlx->last_node;
+                o, dlx->nd[dlx->last_node].up = kcontext->q, dlx->nd[dlx->last_node].down = kcontext->r;
             }
 
-            for (p += j + 1; o, isspace(dlx->buf[p]); p++)
+            for (kcontext->p += kcontext->j + 1; o, isspace(dlx->buf[kcontext->p]); kcontext->p++)
                 ;
         }
-        if (!pp)
+        if (!kcontext->pp)
         {
             if (dlx->vbose & show_warnings)
                 fprintf(dlx->stream_err, "Option ignored (no primary items): " O "s", dlx->buf);
-            while (dlx->last_node > i)
+            while (dlx->last_node > kcontext->i)
             {
 
-                o, k = dlx->nd[dlx->last_node].itm;
-                oo, dlx->nd[k].len--, dlx->nd[k].aux = i - 1;
-                o, q = dlx->nd[dlx->last_node].up, r = dlx->nd[dlx->last_node].down;
-                oo, dlx->nd[q].down = r, dlx->nd[r].up = q;
+                o, kcontext->k = dlx->nd[dlx->last_node].itm;
+                oo, dlx->nd[kcontext->k].len--, dlx->nd[kcontext->k].aux = kcontext->i - 1;
+                o, kcontext->q = dlx->nd[dlx->last_node].up, kcontext->r = dlx->nd[dlx->last_node].down;
+                oo, dlx->nd[kcontext->q].down = kcontext->r, dlx->nd[kcontext->r].up = kcontext->q;
 
                 dlx->last_node--;
             }
         }
         else
         {
-            o, dlx->nd[i].down = dlx->last_node;
+            o, dlx->nd[kcontext->i].down = dlx->last_node;
             dlx->last_node++;
             if (dlx->last_node == max_nodes)
-                panic(dlx, p, "Too many nodes", L);
+                panic(dlx, kcontext->p, "Too many nodes", L);
             dlx->options++;
-            o, dlx->nd[dlx->last_node].up = i + 1;
+            o, dlx->nd[dlx->last_node].up = kcontext->i + 1;
             o, dlx->nd[dlx->last_node].itm = -dlx->options;
         }
     }
@@ -416,11 +449,11 @@ void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
     if (dlx->vbose & show_tots)
     {
         fprintf(dlx->stream_err, "Item totals:");
-        for (k = 1; k < dlx->last_itm; k++)
+        for (kcontext->k = 1; kcontext->k < dlx->last_itm; kcontext->k++)
         {
-            if (k == dlx->second)
+            if (kcontext->k == dlx->second)
                 fprintf(dlx->stream_err, " |");
-            fprintf(dlx->stream_err, " " O "d", dlx->nd[k].len);
+            fprintf(dlx->stream_err, " " O "d", dlx->nd[kcontext->k].len);
         }
         fprintf(dlx->stream_err, "\n");
     }
@@ -439,7 +472,7 @@ forward:
     {
         dlx->thresh += dlx->delta;
         if (dlx->vbose & show_full_state)
-            print_state(dlx);
+            print_state(L, dlx);
         else
             print_progress(dlx);
     }
@@ -449,61 +482,60 @@ forward:
         goto done;
     }
 
-    dlx->tmems = dlx->mems, t = max_nodes;
+    dlx->tmems = dlx->mems, kcontext->t = max_nodes;
     if ((dlx->vbose & show_details) &&
         dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
         fprintf(dlx->stream_err, "level " O "d:", dlx->level);
-    for (o, k = dlx->cl[root].next; t && k != root; o, k = dlx->cl[k].next)
+    for (o, kcontext->k = dlx->cl[root].next; kcontext->t && kcontext->k != root; o, kcontext->k = dlx->cl[kcontext->k].next)
     {
         if ((dlx->vbose & show_details) &&
             dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
-            fprintf(dlx->stream_err, " " O ".8s(" O "d)", dlx->cl[k].name, dlx->nd[k].len);
-        if (o, dlx->nd[k].len <= t)
+            fprintf(dlx->stream_err, " " O ".8s(" O "d)", dlx->cl[kcontext->k].name, dlx->nd[kcontext->k].len);
+        if (o, dlx->nd[kcontext->k].len <= kcontext->t)
         {
-            if (dlx->nd[k].len < t)
-                best_itm = k, t = dlx->nd[k].len, p = 1;
+            if (dlx->nd[kcontext->k].len < kcontext->t)
+                kcontext->best_itm = kcontext->k, kcontext->t = dlx->nd[kcontext->k].len, kcontext->p = 1;
             else
             {
-                p++;
-                if (dlx->randomizing && (dlx->mems += 4, !gb_unif_rand(p)))
-                    best_itm = k;
+                kcontext->p++;
+                if (dlx->randomizing && (dlx->mems += 4, !gb_unif_rand(kcontext->p)))
+                    kcontext->best_itm = kcontext->k;
             }
         }
     }
     if ((dlx->vbose & show_details) &&
         dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
-        fprintf(dlx->stream_err, " branching on " O ".8s(" O "d)\n", dlx->cl[best_itm].name, t);
-    if (t > dlx->maxdeg)
-        dlx->maxdeg = t;
+        fprintf(dlx->stream_err, " branching on " O ".8s(" O "d)\n", dlx->cl[kcontext->best_itm].name, kcontext->t);
+    if (kcontext->t > dlx->maxdeg)
+        dlx->maxdeg = kcontext->t;
     if (dlx->shape_file)
     {
-        fprintf(dlx->shape_file, "" O "d " O ".8s\n", t, dlx->cl[best_itm].name);
+        fprintf(dlx->shape_file, "" O "d " O ".8s\n", kcontext->t, dlx->cl[kcontext->best_itm].name);
         fflush(dlx->shape_file);
     }
     dlx->cmems += dlx->mems - dlx->tmems;
 
-    cover(dlx, best_itm);
-    oo, cur_node = dlx->choice[dlx->level] = dlx->nd[best_itm].down;
+    cover(dlx, kcontext->best_itm);
+    oo, kcontext->cur_node = dlx->choice[dlx->level] = dlx->nd[kcontext->best_itm].down;
 advance:
-    if (cur_node == best_itm)
+    if (kcontext->cur_node == kcontext->best_itm)
         goto backup;
     if ((dlx->vbose & show_choices) && dlx->level < dlx->show_choices_max)
     {
         fprintf(dlx->stream_err, "L" O "d:", dlx->level);
-        print_option(dlx, cur_node, dlx->stream_err);
+        print_option(L, dlx, kcontext->cur_node, dlx->stream_err, 0);
     }
 
-    for (pp = cur_node + 1; pp != cur_node;)
+    for (kcontext->pp = kcontext->cur_node + 1; kcontext->pp != kcontext->cur_node;)
     {
-        o, cc = dlx->nd[pp].itm;
-        if (cc <= 0)
-            o, pp = dlx->nd[pp].up;
+        o, kcontext->cc = dlx->nd[kcontext->pp].itm;
+        if (kcontext->cc <= 0)
+            o, kcontext->pp = dlx->nd[kcontext->pp].up;
         else
-            cover(dlx, cc), pp++;
+            cover(dlx, kcontext->cc), kcontext->pp++;
     }
 
     if (o, dlx->cl[root].next == root)
-
     {
         dlx->nodes++;
         if (dlx->level + 1 > dlx->maxl)
@@ -528,9 +560,15 @@ advance:
             if (dlx->spacing && (dlx->count mod dlx->spacing == 0))
             {
                 printf("" O "lld:\n", dlx->count);
-                for (k = 0; k <= dlx->level; k++)
-                    print_option(dlx, dlx->choice[k], dlx->stream_out);
+
+                lua_newtable(L);
+
+                for (kcontext->k = 0; kcontext->k <= dlx->level; kcontext->k++)
+                    print_option(L, dlx, dlx->choice[kcontext->k], dlx->stream_out, kcontext->k + 1);
                 fflush(dlx->stream_out);
+
+                lua_yieldk(L, 1, ctx, &dlx1_kfunction);
+            resume:
             }
             if (dlx->count >= dlx->maxcount)
                 goto done;
@@ -549,34 +587,34 @@ advance:
     }
     goto forward;
 backup:
-    uncover(dlx, best_itm);
+    uncover(dlx, kcontext->best_itm);
     if (dlx->level == 0)
         goto done;
     dlx->level--;
-    oo, cur_node = dlx->choice[dlx->level], best_itm = dlx->nd[cur_node].itm;
+    oo, kcontext->cur_node = dlx->choice[dlx->level], kcontext->best_itm = dlx->nd[kcontext->cur_node].itm;
 recover:
 
-    for (pp = cur_node - 1; pp != cur_node;)
+    for (kcontext->pp = kcontext->cur_node - 1; kcontext->pp != kcontext->cur_node;)
     {
-        o, cc = dlx->nd[pp].itm;
-        if (cc <= 0)
-            o, pp = dlx->nd[pp].down;
+        o, kcontext->cc = dlx->nd[kcontext->pp].itm;
+        if (kcontext->cc <= 0)
+            o, kcontext->pp = dlx->nd[kcontext->pp].down;
         else
-            uncover(dlx, cc), pp--;
+            uncover(dlx, kcontext->cc), kcontext->pp--;
     }
 
-    oo, cur_node = dlx->choice[dlx->level] = dlx->nd[cur_node].down;
+    oo, kcontext->cur_node = dlx->choice[dlx->level] = dlx->nd[kcontext->cur_node].down;
     goto advance;
 
 done:
     if (dlx->vbose & show_tots)
     {
         fprintf(dlx->stream_err, "Item totals:");
-        for (k = 1; k < dlx->last_itm; k++)
+        for (kcontext->k = 1; kcontext->k < dlx->last_itm; kcontext->k++)
         {
-            if (k == dlx->second)
+            if (kcontext->k == dlx->second)
                 fprintf(dlx->stream_err, " |");
-            fprintf(dlx->stream_err, " " O "d", dlx->nd[k].len);
+            fprintf(dlx->stream_err, " " O "d", dlx->nd[kcontext->k].len);
         }
         fprintf(dlx->stream_err, "\n");
     }
@@ -604,36 +642,33 @@ done:
 
     if (dlx->shape_file)
         fclose(dlx->shape_file);
-}
 
-int coroutine(lua_State *L)
-{
-    dlxState_t *dlx = lua_touserdata(L, lua_upvalueindex(1));
-    lua_Integer argc = lua_tointeger(L, lua_upvalueindex(2));
-    char **argv = lua_touserdata(L, lua_upvalueindex(3));
-    lua_Integer close_flags = lua_tointeger(L, lua_upvalueindex(4));
-
-    dlx1_do(L, dlx, argc, argv);
-
-    if (close_flags & 1)
+    if (kcontext->close_flags & 1)
     {
         fclose(dlx->stream_in);
     }
 
-    if (close_flags & 2)
+    if (kcontext->close_flags & 2)
     {
         fclose(dlx->stream_out);
     }
 
-    if (close_flags & 4)
+    if (kcontext->close_flags & 4)
     {
         fclose(dlx->stream_err);
     }
 
     free(dlx);
-    free(argv);
+    free(kcontext->argv);
+    free(kcontext);
 
     return 0;
+}
+
+int coroutine(lua_State *L)
+{
+
+    return dlx1_kfunction(L, LUA_OK, 0);
 }
 
 /*
@@ -641,19 +676,19 @@ int coroutine(lua_State *L)
 */
 int l_create(lua_State *L)
 {
-    lua_Integer close_flags = 0;
     int type;
 
-    lua_Integer argc = lua_tointeger(L, 1);
+    dlx1_KContext_t *kcontext = (dlx1_KContext_t *)malloc(sizeof(dlx1_KContext_t));
+    kcontext->close_flags = 0;
+    kcontext->argc = lua_tointeger(L, 1);
+    kcontext->argv = (char **)malloc(sizeof(char *) * kcontext->argc);
 
-    char **argv = (char **)malloc(sizeof(char *) * argc);
-
-    for (int i = 1; i <= argc; i++)
+    for (int i = 1; i <= kcontext->argc; i++)
     {
         type = lua_rawgeti(L, 2, i);
         assert(type == LUA_TSTRING);
 
-        argv[i - 1] = (char *)lua_tostring(L, -1);
+        kcontext->argv[i - 1] = (char *)lua_tostring(L, -1);
         lua_pop(L, 1);
     }
 
@@ -667,7 +702,7 @@ int l_create(lua_State *L)
     else
     {
         dlx->stream_in = fopen(lua_tostring(L, 3), "r");
-        close_flags |= 1;
+        kcontext->close_flags |= 1;
     }
 
     // stdout
@@ -678,7 +713,7 @@ int l_create(lua_State *L)
     else
     {
         dlx->stream_out = fopen(lua_tostring(L, 4), "r");
-        close_flags |= 2;
+        kcontext->close_flags |= 2;
     }
 
     // stderr
@@ -689,7 +724,7 @@ int l_create(lua_State *L)
     else
     {
         dlx->stream_err = fopen(lua_tostring(L, 5), "r");
-        close_flags |= 4;
+        kcontext->close_flags |= 4;
     }
 
     dlx->sanity_checking = lua_toboolean(L, 6);
@@ -697,10 +732,8 @@ int l_create(lua_State *L)
     lua_State *S = lua_newthread(L);
 
     lua_pushlightuserdata(S, dlx);
-    lua_pushinteger(S, argc);
-    lua_pushlightuserdata(S, argv);
-    lua_pushinteger(S, close_flags);
-    lua_pushcclosure(S, &coroutine, 4);
+    lua_pushlightuserdata(S, kcontext);
+    lua_pushcclosure(S, &coroutine, 2);
 
     return 1;
 }

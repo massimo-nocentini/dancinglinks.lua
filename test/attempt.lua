@@ -1,5 +1,6 @@
 
 local dlx = require 'dlx'.dlx1
+local op = require 'operator'
 
 local co = dlx.create {
     stdout = nil, -- default to actual stdout,
@@ -26,7 +27,10 @@ local co = dlx.create {
     }
 }
 
-coroutine.resume (co)
-
+for i = 1, 2 do
+    local flag, sol = coroutine.resume (co)
+    
+    op.print_table (sol)
+end
 -- use coroutine.resume as usual.
 -- local yielded = dlx.resume (co, function (sol) end)
