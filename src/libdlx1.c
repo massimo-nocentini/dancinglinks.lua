@@ -24,13 +24,13 @@
 
 #include "dlx1.h"
 
-void panic(dlxState_t *dlx, int p, char *m, lua_State *L)
+void panic(dlx1State_t *dlx, int p, char *m, lua_State *L)
 {
     fprintf(dlx->stream_err, "" O "s!\n" O "d: " O "s\n", m, p, dlx->buf);
     luaL_error(L, "" O "s!\n" O "d: " O "s", m, p, dlx->buf);
 }
 
-void print_option(lua_State *L, dlxState_t *dlx, int p, FILE *stream, int sol_pos)
+void print_option(lua_State *L, dlx1State_t *dlx, int p, FILE *stream, int sol_pos)
 {
     int k, q;
     if (p < dlx->last_itm || p >= dlx->last_node || dlx->nd[p].itm <= 0)
@@ -81,12 +81,12 @@ void print_option(lua_State *L, dlxState_t *dlx, int p, FILE *stream, int sol_po
     }
 }
 
-void prow(lua_State *L, dlxState_t *dlx, int p)
+void prow(lua_State *L, dlx1State_t *dlx, int p)
 {
     print_option(L, dlx, p, dlx->stream_err, invalid_sol_pos);
 }
 
-void print_itm(lua_State *L, dlxState_t *dlx, int c)
+void print_itm(lua_State *L, dlx1State_t *dlx, int c)
 {
     int p;
     if (c < root || c >= dlx->last_itm)
@@ -103,7 +103,7 @@ void print_itm(lua_State *L, dlxState_t *dlx, int c)
         prow(L, dlx, p);
 }
 
-void sanity(dlxState_t *dlx)
+void sanity(dlx1State_t *dlx)
 {
     int k, p, q, pp, qq;
     for (q = root, p = dlx->cl[q].next;; q = p, p = dlx->cl[p].next)
@@ -129,7 +129,7 @@ void sanity(dlxState_t *dlx)
     }
 }
 
-void cover(dlxState_t *dlx, int c)
+void cover(dlx1State_t *dlx, int c)
 {
     int cc, l, r, rr, nn, uu, dd, t;
     o, l = dlx->cl[c].prev, r = dlx->cl[c].next;
@@ -153,7 +153,7 @@ void cover(dlxState_t *dlx, int c)
         }
 }
 
-void uncover(dlxState_t *dlx, int c)
+void uncover(dlx1State_t *dlx, int c)
 {
     int cc, l, r, rr, nn, uu, dd, t;
     for (o, rr = dlx->nd[c].down; rr >= dlx->last_itm; o, rr = dlx->nd[rr].down)
@@ -175,7 +175,7 @@ void uncover(dlxState_t *dlx, int c)
     oo, dlx->cl[l].next = dlx->cl[r].prev = c;
 }
 
-void print_state(lua_State *L, dlxState_t *dlx)
+void print_state(lua_State *L, dlx1State_t *dlx)
 {
     int l;
     fprintf(dlx->stream_err, "Current state (level " O "d):\n", dlx->level);
@@ -192,7 +192,7 @@ void print_state(lua_State *L, dlxState_t *dlx)
             dlx->count, dlx->mems, dlx->maxl);
 }
 
-void print_progress(dlxState_t *dlx)
+void print_progress(dlx1State_t *dlx)
 {
     int l, k, d, c, p;
     double f, fd;
@@ -219,18 +219,18 @@ void print_progress(dlxState_t *dlx)
     fprintf(dlx->stream_err, " " O ".5f\n", f + 0.5 / fd);
 }
 
-typedef struct dlx1_KContext_m
+typedef struct
 {
     int argc;
     char **argv;
     int close_flags;
     int cc, i, j, k, p, pp, q, r, t, cur_node, best_itm;
-} dlx1_KContext_t;
+} dlx1KContext_t;
 
 int dlx1_kfunction(lua_State *L, int status, lua_KContext ctx)
 {
-    dlxState_t *dlx = (dlxState_t *)lua_touserdata(L, lua_upvalueindex(1));
-    dlx1_KContext_t *kcontext = (dlx1_KContext_t *)lua_touserdata(L, lua_upvalueindex(2));
+    dlx1State_t *dlx = lua_touserdata(L, lua_upvalueindex(1));
+    dlx1KContext_t *kcontext = lua_touserdata(L, lua_upvalueindex(2));
 
     if (status == LUA_YIELD)
         goto resume;
@@ -635,7 +635,7 @@ done:
     {
         fprintf(dlx->stream_err, "Altogether " O "llu solution" O "s, " O "llu+" O "llu mems,",
                 dlx->count, dlx->count == 1 ? "" : "s", dlx->imems, dlx->mems);
-        dlx->bytes = dlx->last_itm * sizeof(dlxItem_t) + dlx->last_node * sizeof(dlxNode_t) + dlx->maxl * sizeof(int);
+        dlx->bytes = dlx->last_itm * sizeof(dlx1Item_t) + dlx->last_node * sizeof(dlx1Node_t) + dlx->maxl * sizeof(int);
         fprintf(dlx->stream_err, " " O "llu updates, " O "llu bytes, " O "llu nodes,",
                 dlx->updates, dlx->bytes, dlx->nodes);
         fprintf(dlx->stream_err, " ccost " O "lld%%.\n",
@@ -680,7 +680,7 @@ int l_create(lua_State *L)
 {
     int type;
 
-    dlx1_KContext_t *kcontext = (dlx1_KContext_t *)malloc(sizeof(dlx1_KContext_t));
+    dlx1KContext_t *kcontext = (dlx1KContext_t *)malloc(sizeof(dlx1KContext_t));
     kcontext->close_flags = 0;
     kcontext->argc = lua_tointeger(L, 1);
     kcontext->argv = (char **)malloc(sizeof(char *) * kcontext->argc);
@@ -694,7 +694,7 @@ int l_create(lua_State *L)
         lua_pop(L, 1);
     }
 
-    dlxState_t *dlx = (dlxState_t *)malloc(sizeof(dlxState_t));
+    dlx1State_t *dlx = (dlx1State_t *)malloc(sizeof(dlx1State_t));
 
     // stdin
     if (lua_isnoneornil(L, 3))

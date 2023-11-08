@@ -23,18 +23,18 @@
 typedef unsigned int uint;
 typedef unsigned long long ullng;
 
-typedef struct node_struct
+typedef struct
 {
     int up, down;
     int itm;
     int spare;
-} dlxNode_t;
+} dlx1Node_t;
 
-typedef struct itm_struct
+typedef struct
 {
     char name[max_name_length];
     int prev, next;
-} dlxItem_t;
+} dlx1Item_t;
 
 typedef struct dlxState_s
 {
@@ -62,9 +62,9 @@ typedef struct dlxState_s
     char *shape_name;
     int maxdeg;
 
-    dlxNode_t nd[max_nodes];
+    dlx1Node_t nd[max_nodes];
     int last_node;
-    dlxItem_t cl[max_cols + 2];
+    dlx1Item_t cl[max_cols + 2];
     int second;
     int last_itm;
 
@@ -78,4 +78,4 @@ typedef struct dlxState_s
 
     int sanity_checking;
 
-} dlxState_t;
+} dlx1State_t;
