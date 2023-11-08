@@ -2,7 +2,11 @@
 
 local libdlx1 = require 'libdlx1'
 
-local dlx = {}
+local dlx = {
+    dlx1 = {
+        show = libdlx1.show
+    }
+}
 
 local function parse_argv (tbl)
     local argc, argv = 1, {'lua'}
@@ -15,13 +19,14 @@ local function parse_argv (tbl)
     return argc, argv
 end
 
-function dlx.dlx1 (tbl)
+function dlx.dlx1.create (tbl)
 
     local argc, argv = parse_argv (tbl)
+    local sanity_checking = false
 
     -- handle here the streams for input, output and error.
 
-    return libdlx1.create (argc, argv)    -- for now discard the std streams.
+    return libdlx1.create (argc, argv, nil, nil, nil, sanity_checking)    -- for now discard the std streams.
 
 end
 

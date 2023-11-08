@@ -1,7 +1,7 @@
 
-local dlx = require 'dlx'
+local dlx = require 'dlx'.dlx1
 
-local co = dlx.dlx1 {
+local co = dlx.create {
     stdout = nil, -- default to actual stdout,
     stderr = nil,   -- default to actual stderr.
     -- either
@@ -22,7 +22,7 @@ local co = dlx.dlx1 {
         S = 'tree.txt',
         m = 1,
         s = 541,
-        v = 135,
+        v = dlx.show.basics | dlx.show.choices | dlx.show.details | dlx.show.profile,
     }
 }
 

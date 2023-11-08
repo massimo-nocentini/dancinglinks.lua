@@ -16,8 +16,6 @@
 
 #define root 0
 
-#define sanity_checking 0
-
 #define max_name_length 64
 
 #include <stdio.h>
@@ -77,5 +75,7 @@ typedef struct dlxState_s
     FILE *stream_in;
     FILE *stream_out;
     FILE *stream_err;
+
+    int sanity_checking;
 
 } dlxState_t;

@@ -432,7 +432,7 @@ forward:
     dlx->nodes++;
     if (dlx->vbose & show_profile)
         dlx->profile[dlx->level]++;
-    if (sanity_checking)
+    if (dlx->sanity_checking)
         sanity(dlx);
 
     if (dlx->delta && (dlx->mems >= dlx->thresh))
@@ -452,7 +452,7 @@ forward:
     dlx->tmems = dlx->mems, t = max_nodes;
     if ((dlx->vbose & show_details) &&
         dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
-        fprintf(dlx->stream_err, "dlx->level " O "d:", dlx->level);
+        fprintf(dlx->stream_err, "level " O "d:", dlx->level);
     for (o, k = dlx->cl[root].next; t && k != root; o, k = dlx->cl[k].next)
     {
         if ((dlx->vbose & show_details) &&
@@ -662,6 +662,8 @@ int l_create(lua_State *L)
         close_flags |= 4;
     }
 
+    dlx->sanity_checking = lua_toboolean(L, 6);
+
     dlx1_do(L, dlx, argc, argv);
 
     if (close_flags & 1)
@@ -689,9 +691,43 @@ const struct luaL_Reg libdlx1[] = {
     {NULL, NULL} /* sentinel */
 };
 
+void push_show_constants(lua_State *L)
+{
+
+    lua_newtable(L);
+
+    lua_pushinteger(L, show_basics);
+    lua_setfield(L, -2, "basics");
+
+    lua_pushinteger(L, show_choices);
+    lua_setfield(L, -2, "choices");
+
+    lua_pushinteger(L, show_details);
+    lua_setfield(L, -2, "details");
+
+    lua_pushinteger(L, show_full_state);
+    lua_setfield(L, -2, "full_state");
+
+    lua_pushinteger(L, show_max_deg);
+    lua_setfield(L, -2, "max_deg");
+
+    lua_pushinteger(L, show_profile);
+    lua_setfield(L, -2, "profile");
+
+    lua_pushinteger(L, show_tots);
+    lua_setfield(L, -2, "tots");
+
+    lua_pushinteger(L, show_warnings);
+    lua_setfield(L, -2, "warnings");
+
+    lua_setfield(L, -2, "show"); // store the new table into the final module.
+}
+
 int luaopen_libdlx1(lua_State *L) // the initialization function of the module.
 {
     luaL_newlib(L, libdlx1);
+
+    push_show_constants(L);
 
     return 1;
 }
