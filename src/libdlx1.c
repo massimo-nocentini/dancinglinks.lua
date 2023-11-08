@@ -606,12 +606,42 @@ done:
         fclose(dlx->shape_file);
 }
 
+int coroutine(lua_State *L)
+{
+    dlxState_t *dlx = lua_touserdata(L, lua_upvalueindex(1));
+    lua_Integer argc = lua_tointeger(L, lua_upvalueindex(2));
+    char **argv = lua_touserdata(L, lua_upvalueindex(3));
+    lua_Integer close_flags = lua_tointeger(L, lua_upvalueindex(4));
+
+    dlx1_do(L, dlx, argc, argv);
+
+    if (close_flags & 1)
+    {
+        fclose(dlx->stream_in);
+    }
+
+    if (close_flags & 2)
+    {
+        fclose(dlx->stream_out);
+    }
+
+    if (close_flags & 4)
+    {
+        fclose(dlx->stream_err);
+    }
+
+    free(dlx);
+    free(argv);
+
+    return 0;
+}
+
 /*
     This function consumes a table of strings that denotes the arguments to the solver.
 */
 int l_create(lua_State *L)
 {
-    char close_flags = 0;
+    lua_Integer close_flags = 0;
     int type;
 
     lua_Integer argc = lua_tointeger(L, 1);
@@ -664,26 +694,15 @@ int l_create(lua_State *L)
 
     dlx->sanity_checking = lua_toboolean(L, 6);
 
-    dlx1_do(L, dlx, argc, argv);
+    lua_State *S = lua_newthread(L);
 
-    if (close_flags & 1)
-    {
-        fclose(dlx->stream_in);
-    }
+    lua_pushlightuserdata(S, dlx);
+    lua_pushinteger(S, argc);
+    lua_pushlightuserdata(S, argv);
+    lua_pushinteger(S, close_flags);
+    lua_pushcclosure(S, &coroutine, 4);
 
-    if (close_flags & 2)
-    {
-        fclose(dlx->stream_out);
-    }
-
-    if (close_flags & 4)
-    {
-        fclose(dlx->stream_err);
-    }
-
-    free(dlx);
-
-    return 0;
+    return 1;
 }
 
 const struct luaL_Reg libdlx1[] = {

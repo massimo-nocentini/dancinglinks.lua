@@ -26,5 +26,7 @@ local co = dlx.create {
     }
 }
 
+coroutine.resume (co)
+
 -- use coroutine.resume as usual.
 -- local yielded = dlx.resume (co, function (sol) end)
