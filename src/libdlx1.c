@@ -561,7 +561,7 @@ advance:
             dlx->count++;
             if (dlx->spacing && (dlx->count mod dlx->spacing == 0))
             {
-                printf("" O "lld:\n", dlx->count);
+                fprintf(dlx->stream_out, "" O "lld:\n", dlx->count);
 
                 lua_newtable(L);
 
@@ -701,10 +701,14 @@ int l_create(lua_State *L)
     {
         dlx->stream_in = stdin;
     }
-    else
+    else if (lua_type(L, 3) == LUA_TSTRING)
     {
         dlx->stream_in = fopen(lua_tostring(L, 3), "r");
         kcontext->close_flags |= 1;
+    }
+    else
+    {
+        luaL_error(L, "Not valid argument for stdin.");
     }
 
     // stdout
@@ -712,10 +716,14 @@ int l_create(lua_State *L)
     {
         dlx->stream_out = stdout;
     }
+    else if (lua_type(L, 4) == LUA_TSTRING)
+    {
+        dlx->stream_out = fopen(lua_tostring(L, 4), "w");
+        kcontext->close_flags |= 2;
+    }
     else
     {
-        dlx->stream_out = fopen(lua_tostring(L, 4), "r");
-        kcontext->close_flags |= 2;
+        luaL_error(L, "Not valid argument for stdout.");
     }
 
     // stderr
@@ -723,10 +731,14 @@ int l_create(lua_State *L)
     {
         dlx->stream_err = stderr;
     }
+    else if (lua_type(L, 5) == LUA_TSTRING)
+    {
+        dlx->stream_err = fopen(lua_tostring(L, 5), "w");
+        kcontext->close_flags |= 4;
+    }
     else
     {
-        dlx->stream_err = fopen(lua_tostring(L, 5), "r");
-        kcontext->close_flags |= 4;
+        luaL_error(L, "Not valid argument for stderr.");
     }
 
     dlx->sanity_checking = lua_toboolean(L, 6);

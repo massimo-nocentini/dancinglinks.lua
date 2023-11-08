@@ -10,3 +10,5 @@ knuth/test/queens/queens-dlx.idx
 knuth/test/queens/queens-dlx
 test/tree.txt
 tree.txt
+log.txt
+test/sols.txt

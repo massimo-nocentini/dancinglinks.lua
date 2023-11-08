@@ -26,7 +26,7 @@ function dlx.dlx1.create (tbl)
 
     -- handle here the streams for input, output and error.
 
-    return libdlx1.create (argc, argv, nil, nil, nil, sanity_checking)    -- for now discard the std streams.
+    return libdlx1.create (argc, argv, tbl.stdin, tbl.stdout, tbl.stderr, sanity_checking)    -- for now discard the std streams.
 
 end
 
