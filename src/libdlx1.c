@@ -9,6 +9,8 @@
 #define len itm
 #define aux spare
 
+#define invalid_sol_pos 0
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,7 +83,7 @@ void print_option(lua_State *L, dlxState_t *dlx, int p, FILE *stream, int sol_po
 
 void prow(lua_State *L, dlxState_t *dlx, int p)
 {
-    print_option(L, dlx, p, dlx->stream_err, 0);
+    print_option(L, dlx, p, dlx->stream_err, invalid_sol_pos);
 }
 
 void print_itm(lua_State *L, dlxState_t *dlx, int c)
@@ -179,7 +181,7 @@ void print_state(lua_State *L, dlxState_t *dlx)
     fprintf(dlx->stream_err, "Current state (level " O "d):\n", dlx->level);
     for (l = 0; l < dlx->level; l++)
     {
-        print_option(L, dlx, dlx->choice[l], dlx->stream_err, 0);
+        print_option(L, dlx, dlx->choice[l], dlx->stream_err, invalid_sol_pos);
         if (l >= dlx->show_levels_max)
         {
             fprintf(dlx->stream_err, " ...\n");
@@ -523,7 +525,7 @@ advance:
     if ((dlx->vbose & show_choices) && dlx->level < dlx->show_choices_max)
     {
         fprintf(dlx->stream_err, "L" O "d:", dlx->level);
-        print_option(L, dlx, kcontext->cur_node, dlx->stream_err, 0);
+        print_option(L, dlx, kcontext->cur_node, dlx->stream_err, invalid_sol_pos);
     }
 
     for (kcontext->pp = kcontext->cur_node + 1; kcontext->pp != kcontext->cur_node;)
@@ -667,7 +669,7 @@ done:
 
 int coroutine(lua_State *L)
 {
-
+    // call the continuation function
     return dlx1_kfunction(L, LUA_OK, 0);
 }
 

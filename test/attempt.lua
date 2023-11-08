@@ -27,9 +27,9 @@ local co = dlx.create {
     }
 }
 
-for i = 1, 2 do
+for i = 1, 95 do
     local flag, sol = coroutine.resume (co)
-    
+    if not sol then break end
     op.print_table (sol)
 end
 -- use coroutine.resume as usual.
