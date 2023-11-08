@@ -24,8 +24,8 @@
 
 void panic(dlxState_t *dlx, int p, char *m, lua_State *L)
 {
-    fprintf(stderr, "" O "s!\n" O "d: " O ".99s\n", m, p, dlx->buf);
-    luaL_error(L, "" O "s!\n" O "d: " O ".99s\n", m, p, dlx->buf);
+    fprintf(dlx->stream_err, "" O "s!\n" O "d: " O ".99s\n", m, p, dlx->buf);
+    luaL_error(L, "" O "s!\n" O "d: " O "s", m, p, dlx->buf);
 }
 
 void print_option(dlxState_t *dlx, int p, FILE *stream)
@@ -33,7 +33,7 @@ void print_option(dlxState_t *dlx, int p, FILE *stream)
     int k, q;
     if (p < dlx->last_itm || p >= dlx->last_node || dlx->nd[p].itm <= 0)
     {
-        fprintf(stderr, "Illegal option " O "d!\n", p);
+        fprintf(dlx->stream_err, "Illegal option " O "d!\n", p);
         return;
     }
     for (q = p;;)
@@ -60,7 +60,7 @@ void print_option(dlxState_t *dlx, int p, FILE *stream)
 
 void prow(dlxState_t *dlx, int p)
 {
-    print_option(dlx, p, stderr);
+    print_option(dlx, p, dlx->stream_err);
 }
 
 void print_itm(dlxState_t *dlx, int c)
@@ -68,14 +68,14 @@ void print_itm(dlxState_t *dlx, int c)
     int p;
     if (c < root || c >= dlx->last_itm)
     {
-        fprintf(stderr, "Illegal item " O "d!\n", c);
+        fprintf(dlx->stream_err, "Illegal item " O "d!\n", c);
         return;
     }
     if (c < dlx->second)
-        fprintf(stderr, "Item " O ".8s, length " O "d, neighbors " O ".8s and " O ".8s:\n",
+        fprintf(dlx->stream_err, "Item " O ".8s, length " O "d, neighbors " O ".8s and " O ".8s:\n",
                 dlx->cl[c].name, dlx->nd[c].len, dlx->cl[dlx->cl[c].prev].name, dlx->cl[dlx->cl[c].next].name);
     else
-        fprintf(stderr, "Item " O ".8s, length " O "d:\n", dlx->cl[c].name, dlx->nd[c].len);
+        fprintf(dlx->stream_err, "Item " O ".8s, length " O "d:\n", dlx->cl[c].name, dlx->nd[c].len);
     for (p = dlx->nd[c].down; p >= dlx->last_itm; p = dlx->nd[p].down)
         prow(dlx, p);
 }
@@ -86,7 +86,7 @@ void sanity(dlxState_t *dlx)
     for (q = root, p = dlx->cl[q].next;; q = p, p = dlx->cl[p].next)
     {
         if (dlx->cl[p].prev != q)
-            fprintf(stderr, "Bad prev field at itm " O ".8s!\n",
+            fprintf(dlx->stream_err, "Bad prev field at itm " O ".8s!\n",
                     dlx->cl[p].name);
         if (p == root)
             break;
@@ -94,14 +94,14 @@ void sanity(dlxState_t *dlx)
         for (qq = p, pp = dlx->nd[qq].down, k = 0;; qq = pp, pp = dlx->nd[pp].down, k++)
         {
             if (dlx->nd[pp].up != qq)
-                fprintf(stderr, "Bad up field at node " O "d!\n", pp);
+                fprintf(dlx->stream_err, "Bad up field at node " O "d!\n", pp);
             if (pp == p)
                 break;
             if (dlx->nd[pp].itm != p)
-                fprintf(stderr, "Bad itm field at node " O "d!\n", pp);
+                fprintf(dlx->stream_err, "Bad itm field at node " O "d!\n", pp);
         }
         if (dlx->nd[p].len != k)
-            fprintf(stderr, "Bad len field in item " O ".8s!\n",
+            fprintf(dlx->stream_err, "Bad len field in item " O ".8s!\n",
                     dlx->cl[p].name);
     }
 }
@@ -155,17 +155,17 @@ void uncover(dlxState_t *dlx, int c)
 void print_state(dlxState_t *dlx)
 {
     int l;
-    fprintf(stderr, "Current state (level " O "d):\n", dlx->level);
+    fprintf(dlx->stream_err, "Current state (level " O "d):\n", dlx->level);
     for (l = 0; l < dlx->level; l++)
     {
-        print_option(dlx, dlx->choice[l], stderr);
+        print_option(dlx, dlx->choice[l], dlx->stream_err);
         if (l >= dlx->show_levels_max)
         {
-            fprintf(stderr, " ...\n");
+            fprintf(dlx->stream_err, " ...\n");
             break;
         }
     }
-    fprintf(stderr, " " O "lld solutions, " O "lld mems, and max level " O "d so far.\n",
+    fprintf(dlx->stream_err, " " O "lld solutions, " O "lld mems, and max level " O "d so far.\n",
             dlx->count, dlx->mems, dlx->maxl);
 }
 
@@ -173,14 +173,14 @@ void print_progress(dlxState_t *dlx)
 {
     int l, k, d, c, p;
     double f, fd;
-    fprintf(stderr, " after " O "lld mems: " O "lld sols,", dlx->mems, dlx->count);
+    fprintf(dlx->stream_err, " after " O "lld mems: " O "lld sols,", dlx->mems, dlx->count);
     for (f = 0.0, fd = 1.0, l = 0; l < dlx->level; l++)
     {
         c = dlx->nd[dlx->choice[l]].itm, d = dlx->nd[c].len;
         for (k = 1, p = dlx->nd[c].down; p != dlx->choice[l]; k++, p = dlx->nd[p].down)
             ;
         fd *= d, f += (k - 1) / fd;
-        fprintf(stderr, " " O "c" O "c",
+        fprintf(dlx->stream_err, " " O "c" O "c",
                 k < 10 ? '0' + k : k < 36 ? 'a' + k - 10
                                : k < 62   ? 'A' + k - 36
                                           : '*',
@@ -189,11 +189,11 @@ void print_progress(dlxState_t *dlx)
                                           : '*');
         if (l >= dlx->show_levels_max)
         {
-            fprintf(stderr, "...");
+            fprintf(dlx->stream_err, "...");
             break;
         }
     }
-    fprintf(stderr, " " O ".5f\n", f + 0.5 / fd);
+    fprintf(dlx->stream_err, " " O ".5f\n", f + 0.5 / fd);
 }
 
 void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
@@ -247,7 +247,7 @@ void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
         case 'S':
             dlx->shape_name = argv[j] + 1, dlx->shape_file = fopen(dlx->shape_name, "w");
             if (!dlx->shape_file)
-                fprintf(stderr, "Sorry, I can't open file `" O "s' for writing!\n",
+                fprintf(dlx->stream_err, "Sorry, I can't open file `" O "s' for writing!\n",
                         dlx->shape_name);
             break;
         default:
@@ -255,18 +255,21 @@ void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
         }
     if (k)
     {
-        fprintf(stderr, "Usage: " O "s [v<n>] [m<n>] [s<n>] [d<n>]"
-                        " [c<n>] [C<n>] [l<n>] [t<n>] [T<n>] [S<bar>] < foo.dlx\n",
+        fprintf(dlx->stream_err, "Usage: " O "s [v<n>] [m<n>] [s<n>] [d<n>]"
+                                 " [c<n>] [C<n>] [l<n>] [t<n>] [T<n>] [S<bar>] < foo.dlx\n",
                 argv[0]);
-        exit(-1);
+
+        luaL_error(L, "Usage: " O "s [v<n>] [m<n>] [s<n>] [d<n>]"
+                      " [c<n>] [C<n>] [l<n>] [t<n>] [T<n>] [S<bar>] < foo.dlx",
+                   argv[0]);
     }
     if (dlx->randomizing)
         gb_init_rand(dlx->random_seed);
 
     if (max_nodes <= 2 * max_cols)
     {
-        fprintf(stderr, "Recompile me: max_nodes must exceed twice max_cols!\n");
-        exit(-999);
+        fprintf(dlx->stream_err, "Recompile me: max_nodes must exceed twice max_cols!\n");
+        luaL_error(L, "Recompile me: max_nodes must exceed twice max_cols!");
     }
     while (1)
     {
@@ -381,7 +384,7 @@ void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
         if (!pp)
         {
             if (dlx->vbose & show_warnings)
-                fprintf(stderr, "Option ignored (no primary items): " O "s", dlx->buf);
+                fprintf(dlx->stream_err, "Option ignored (no primary items): " O "s", dlx->buf);
             while (dlx->last_node > i)
             {
 
@@ -406,20 +409,20 @@ void dlx1_do(lua_State *L, dlxState_t *dlx, int argc, char **argv)
     }
 
     if (dlx->vbose & show_basics)
-        fprintf(stderr,
+        fprintf(dlx->stream_err,
                 "(" O "lld options, " O "d+" O "d items, " O "d entries successfully read)\n",
                 dlx->options, dlx->second - 1, dlx->last_itm - dlx->second, dlx->last_node - dlx->last_itm);
 
     if (dlx->vbose & show_tots)
     {
-        fprintf(stderr, "Item totals:");
+        fprintf(dlx->stream_err, "Item totals:");
         for (k = 1; k < dlx->last_itm; k++)
         {
             if (k == dlx->second)
-                fprintf(stderr, " |");
-            fprintf(stderr, " " O "d", dlx->nd[k].len);
+                fprintf(dlx->stream_err, " |");
+            fprintf(dlx->stream_err, " " O "d", dlx->nd[k].len);
         }
-        fprintf(stderr, "\n");
+        fprintf(dlx->stream_err, "\n");
     }
 
     dlx->imems = dlx->mems, dlx->mems = 0;
@@ -442,19 +445,19 @@ forward:
     }
     if (dlx->mems >= dlx->timeout)
     {
-        fprintf(stderr, "TIMEOUT!\n");
+        fprintf(dlx->stream_err, "TIMEOUT!\n");
         goto done;
     }
 
     dlx->tmems = dlx->mems, t = max_nodes;
     if ((dlx->vbose & show_details) &&
         dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
-        fprintf(stderr, "dlx->level " O "d:", dlx->level);
+        fprintf(dlx->stream_err, "dlx->level " O "d:", dlx->level);
     for (o, k = dlx->cl[root].next; t && k != root; o, k = dlx->cl[k].next)
     {
         if ((dlx->vbose & show_details) &&
             dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
-            fprintf(stderr, " " O ".8s(" O "d)", dlx->cl[k].name, dlx->nd[k].len);
+            fprintf(dlx->stream_err, " " O ".8s(" O "d)", dlx->cl[k].name, dlx->nd[k].len);
         if (o, dlx->nd[k].len <= t)
         {
             if (dlx->nd[k].len < t)
@@ -469,7 +472,7 @@ forward:
     }
     if ((dlx->vbose & show_details) &&
         dlx->level < dlx->show_choices_max && dlx->level >= dlx->maxl - dlx->show_choices_gap)
-        fprintf(stderr, " branching on " O ".8s(" O "d)\n", dlx->cl[best_itm].name, t);
+        fprintf(dlx->stream_err, " branching on " O ".8s(" O "d)\n", dlx->cl[best_itm].name, t);
     if (t > dlx->maxdeg)
         dlx->maxdeg = t;
     if (dlx->shape_file)
@@ -486,8 +489,8 @@ advance:
         goto backup;
     if ((dlx->vbose & show_choices) && dlx->level < dlx->show_choices_max)
     {
-        fprintf(stderr, "L" O "d:", dlx->level);
-        print_option(dlx, cur_node, stderr);
+        fprintf(dlx->stream_err, "L" O "d:", dlx->level);
+        print_option(dlx, cur_node, dlx->stream_err);
     }
 
     for (pp = cur_node + 1; pp != cur_node;)
@@ -507,8 +510,8 @@ advance:
         {
             if (dlx->level + 1 >= max_level)
             {
-                fprintf(stderr, "Too many levels!\n");
-                exit(-5);
+                fprintf(dlx->stream_err, "Too many levels!\n");
+                luaL_error(L, "Too many levels!");
             }
             dlx->maxl = dlx->level + 1;
         }
@@ -526,8 +529,8 @@ advance:
             {
                 printf("" O "lld:\n", dlx->count);
                 for (k = 0; k <= dlx->level; k++)
-                    print_option(dlx, dlx->choice[k], stdout);
-                fflush(stdout);
+                    print_option(dlx, dlx->choice[k], dlx->stream_out);
+                fflush(dlx->stream_out);
             }
             if (dlx->count >= dlx->maxcount)
                 goto done;
@@ -539,8 +542,8 @@ advance:
     {
         if (dlx->level >= max_level)
         {
-            fprintf(stderr, "Too many levels!\n");
-            exit(-4);
+            fprintf(dlx->stream_err, "Too many levels!\n");
+            luaL_error(L, "Too many levels!");
         }
         dlx->maxl = dlx->level;
     }
@@ -568,34 +571,34 @@ recover:
 done:
     if (dlx->vbose & show_tots)
     {
-        fprintf(stderr, "Item totals:");
+        fprintf(dlx->stream_err, "Item totals:");
         for (k = 1; k < dlx->last_itm; k++)
         {
             if (k == dlx->second)
-                fprintf(stderr, " |");
-            fprintf(stderr, " " O "d", dlx->nd[k].len);
+                fprintf(dlx->stream_err, " |");
+            fprintf(dlx->stream_err, " " O "d", dlx->nd[k].len);
         }
-        fprintf(stderr, "\n");
+        fprintf(dlx->stream_err, "\n");
     }
 
     if (dlx->vbose & show_profile)
     {
-        fprintf(stderr, "Profile:\n");
+        fprintf(dlx->stream_err, "Profile:\n");
         for (dlx->level = 0; dlx->level <= dlx->maxl; dlx->level++)
-            fprintf(stderr, "" O "3d: " O "lld\n",
+            fprintf(dlx->stream_err, "" O "3d: " O "lld\n",
                     dlx->level, dlx->profile[dlx->level]);
     }
 
     if (dlx->vbose & show_max_deg)
-        fprintf(stderr, "The maximum branching degree was " O "d.\n", dlx->maxdeg);
+        fprintf(dlx->stream_err, "The maximum branching degree was " O "d.\n", dlx->maxdeg);
     if (dlx->vbose & show_basics)
     {
-        fprintf(stderr, "Altogether " O "llu solution" O "s, " O "llu+" O "llu mems,",
+        fprintf(dlx->stream_err, "Altogether " O "llu solution" O "s, " O "llu+" O "llu mems,",
                 dlx->count, dlx->count == 1 ? "" : "s", dlx->imems, dlx->mems);
         dlx->bytes = dlx->last_itm * sizeof(dlxItem_t) + dlx->last_node * sizeof(dlxNode_t) + dlx->maxl * sizeof(int);
-        fprintf(stderr, " " O "llu updates, " O "llu bytes, " O "llu nodes,",
+        fprintf(dlx->stream_err, " " O "llu updates, " O "llu bytes, " O "llu nodes,",
                 dlx->updates, dlx->bytes, dlx->nodes);
-        fprintf(stderr, " ccost " O "lld%%.\n",
+        fprintf(dlx->stream_err, " ccost " O "lld%%.\n",
                 (200 * dlx->cmems + dlx->mems) / (2 * dlx->mems));
     }
 
@@ -651,11 +654,11 @@ int l_create(lua_State *L)
     // stderr
     if (lua_isnoneornil(L, 5))
     {
-        dlx->stream_error = stderr;
+        dlx->stream_err = stderr;
     }
     else
     {
-        dlx->stream_error = fopen(lua_tostring(L, 5), "r");
+        dlx->stream_err = fopen(lua_tostring(L, 5), "r");
         close_flags |= 4;
     }
 
@@ -673,7 +676,7 @@ int l_create(lua_State *L)
 
     if (close_flags & 4)
     {
-        fclose(dlx->stream_error);
+        fclose(dlx->stream_err);
     }
 
     free(dlx);

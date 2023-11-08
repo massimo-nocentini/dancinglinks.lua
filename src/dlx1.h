@@ -76,6 +76,6 @@ typedef struct dlxState_s
 
     FILE *stream_in;
     FILE *stream_out;
-    FILE *stream_error;
+    FILE *stream_err;
 
 } dlxState_t;
