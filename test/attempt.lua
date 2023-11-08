@@ -15,7 +15,7 @@ local stdin = {
     }
 }  --. Finally,
 
-local co = dlx.create {
+local co = dlx.coroutine {
     stdout = 'sols.txt', -- default to actual stdout.
     stderr = 'log.txt',   -- default to actual stderr.
     stdin = '../knuth/test/queens/data_8x8.txt',

@@ -667,7 +667,7 @@ done:
     return 0;
 }
 
-int coroutine(lua_State *L)
+int dlx1_closure(lua_State *L)
 {
     // call the continuation function
     return dlx1_kfunction(L, LUA_OK, 0);
@@ -676,7 +676,7 @@ int coroutine(lua_State *L)
 /*
     This function consumes a table of strings that denotes the arguments to the solver.
 */
-int l_create(lua_State *L)
+int l_coroutine(lua_State *L)
 {
     int type;
 
@@ -747,13 +747,13 @@ int l_create(lua_State *L)
 
     lua_pushlightuserdata(S, dlx);
     lua_pushlightuserdata(S, kcontext);
-    lua_pushcclosure(S, &coroutine, 2);
+    lua_pushcclosure(S, &dlx1_closure, 2);
 
     return 1;
 }
 
 const struct luaL_Reg libdlx1[] = {
-    {"create", l_create},
+    {"coroutine", l_coroutine},
     {NULL, NULL} /* sentinel */
 };
 

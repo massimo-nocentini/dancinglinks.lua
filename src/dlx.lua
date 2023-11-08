@@ -19,14 +19,14 @@ local function parse_argv (tbl)
     return argc, argv
 end
 
-function dlx.dlx1.create (tbl)
+function dlx.dlx1.coroutine (tbl)
 
     local argc, argv = parse_argv (tbl)
     local sanity_checking = false
 
     -- handle here the streams for input, output and error.
 
-    return libdlx1.create (argc, argv, tbl.stdin, tbl.stdout, tbl.stderr, sanity_checking)    -- for now discard the std streams.
+    return libdlx1.coroutine (argc, argv, tbl.stdin, tbl.stdout, tbl.stderr, sanity_checking)    -- for now discard the std streams.
 
 end
 
