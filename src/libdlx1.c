@@ -706,6 +706,31 @@ int l_coroutine(lua_State *L)
         dlx->stream_in = fopen(lua_tostring(L, 3), "r");
         kcontext->close_flags |= 1;
     }
+    else if (lua_type(L, 3) == LUA_TTABLE)
+    {
+        type = lua_getfield(L, 3, "literal");
+
+        if (type == LUA_TSTRING)
+        {
+            size_t literal_size;
+            const char *literal_content = lua_tolstring(L, -1, &literal_size);
+
+            char *tmp_filename = tmpnam(NULL);
+
+            dlx->stream_in = fopen(tmp_filename, "w+");
+            assert(fwrite(literal_content, sizeof(char), literal_size, dlx->stream_in) == literal_size);
+            assert(fflush(dlx->stream_in) == 0);
+            rewind(dlx->stream_in);
+
+            kcontext->close_flags |= 1;
+        }
+        else
+        {
+            luaL_error(L, "Not valid argument for tabled stdin.");
+        }
+
+        lua_pop(L, 1);
+    }
     else
     {
         luaL_error(L, "Not valid argument for stdin.");

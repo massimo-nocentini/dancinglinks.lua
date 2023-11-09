@@ -22,11 +22,15 @@ end
 function dlx.dlx1.coroutine (tbl)
 
     local argc, argv = parse_argv (tbl)
-    local sanity_checking = false
 
-    -- handle here the streams for input, output and error.
-
-    return libdlx1.coroutine (argc, argv, tbl.stdin, tbl.stdout, tbl.stderr, sanity_checking)    -- for now discard the std streams.
+    return libdlx1.coroutine (
+        argc, 
+        argv, 
+        tbl.stdin, 
+        tbl.stdout, 
+        tbl.stderr, 
+        tbl.sanity_checking or false
+    )
 
 end
 
