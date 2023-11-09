@@ -673,6 +673,22 @@ int dlx1_closure(lua_State *L)
     return dlx1_kfunction(L, LUA_OK, 0);
 }
 
+char *string_trim(size_t size, const char *orig, size_t *n)
+{
+    size_t i, j;
+
+    for (i = 0; isspace(*(orig + i)); i++)
+        ;
+
+    for (j = size - 1; j > i && isspace(*(orig + j)); j--)
+        ;
+
+    *n = j - i + 1;
+    char *dest = (char *)malloc(sizeof(char) * (*n + 1));
+    dest[*n] = '\0';
+    return strncpy(dest, orig + i, *n);
+}
+
 /*
     This function consumes a table of strings that denotes the arguments to the solver.
 */
@@ -712,17 +728,22 @@ int l_coroutine(lua_State *L)
 
         if (type == LUA_TSTRING)
         {
-            size_t literal_size;
+            size_t literal_size, trimmed_size;
             const char *literal_content = lua_tolstring(L, -1, &literal_size);
+
+            char *trimmed = string_trim(literal_size, literal_content, &trimmed_size);
 
             char *tmp_filename = tmpnam(NULL);
 
             dlx->stream_in = fopen(tmp_filename, "w+");
-            assert(fwrite(literal_content, sizeof(char), literal_size, dlx->stream_in) == literal_size);
+            assert(fwrite(trimmed, sizeof(char), trimmed_size, dlx->stream_in) == trimmed_size);
+            assert(fwrite("\n", sizeof(char), 1, dlx->stream_in) == 1);
             assert(fflush(dlx->stream_in) == 0);
             rewind(dlx->stream_in);
 
             kcontext->close_flags |= 1;
+
+            free(trimmed);
         }
         else
         {

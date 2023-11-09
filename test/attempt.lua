@@ -21,6 +21,7 @@ local co = dlx.coroutine {
     -- stdin = '../knuth/test/queens/data_8x8.txt',
     stdin = {
         literal = [[
+
 | This data produced by ./queens-dlx 8
 r4 c4 r3 c3 r5 c5 r2 c2 r6 c6 r1 c1 r7 c7 r0 c0 | a1 b1 a2 b2 a3 b3 a4 b4 a5 b5 a6 b6 a7 b7 a8 b8 a9 b9 aa ba ab bb ac bc ad bd
 r0 c0 b7
@@ -87,6 +88,7 @@ r7 c4 ab b4
 r7 c5 ac b5
 r7 c6 ad b6
 r7 c7 b7
+
 ]]
     },
     arguments = {
