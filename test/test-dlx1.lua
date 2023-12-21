@@ -5,12 +5,62 @@ local unittest = require 'unittest'
 
 local tests = {}
 
+
+function tests.test_simple ()
+
+    local co = dlx.coroutine {
+        stdout = 'sols.txt',
+        stderr = 'log.txt',
+        stdin = {
+            literal = [[
+
+
+a b c
+a b
+a c
+c
+b
+
+]]
+        },
+        arguments = {
+            --S = 'tree.txt',
+            m = 1,
+            s = 541,
+            v = dlx.show.basics | dlx.show.choices | dlx.show.details | dlx.show.profile,
+        },
+        sanity_checking = false,
+    }
+    
+    unittest.assert.equals (type (co), 'thread')
+
+    local sols, error_happened = {}, false
+
+    while true do
+        local flag, sol = coroutine.resume (co)
+        
+        if not flag then error_happened = true; break end -- print an error message.
+        
+        if not sol then break end   -- all ok, just finished to enumerate the solution space.
+        
+        table.insert (sols, sol)
+    end
+
+    unittest.assert.isfalse (error_happened)
+    unittest.assert.equals (#sols, 2)
+
+    unittest.assert.equals (sols, {
+        { ' b a', ' c', },
+        { ' b', ' a c', }
+    })
+
+end
+
 function tests.test_queens_literal ()
 
     local co = dlx.coroutine {
         stdout = 'sols.txt',
         stderr = 'log.txt',
-        -- stdin = '../knuth/test/queens/data_8x8.txt',
         stdin = {
             literal = [[
 
