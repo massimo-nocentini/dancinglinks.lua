@@ -138,5 +138,4 @@ end
 
 -----------------------------------------------------------------------------------------------
 
-local result = unittest.run (tests)
-print (result:summary ())
+print (unittest.run (tests):summary ())

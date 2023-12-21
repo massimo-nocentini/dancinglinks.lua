@@ -10,4 +10,4 @@ install:
 	cp dlx.lua /usr/local/share/lua/5.4/
 
 test:
-	cd ../test && lua attempt.lua
+	cd ../test && lua test-dlx1.lua
