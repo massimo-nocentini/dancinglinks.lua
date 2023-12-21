@@ -105,12 +105,12 @@ r7 c7 b7
         sanity_checking = false,
     }
     
-    local sols = {}
+    local sols, error_happened = {}, false
 
     for i = 1, 95 do
         local flag, sol = coroutine.resume (co)
         
-        if not flag then print (sol); break end -- print an error message.
+        if not flag then error_happened = true; break end -- print an error message.
         
         if not sol then break end   -- all ok, just finished to enumerate the solution space.
         
@@ -120,6 +120,7 @@ r7 c7 b7
         table.insert (sols, sol)
     end
 
+    unittest.assert.isfalse (error_happened)
     unittest.assert.equals (#sols, 92)
 
     unittest.assert.equals (sols[1], {
