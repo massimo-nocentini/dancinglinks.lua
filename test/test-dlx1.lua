@@ -105,6 +105,8 @@ r7 c7 b7
         sanity_checking = false,
     }
     
+    unittest.assert.equals (type (co), 'thread')
+
     local sols, error_happened = {}, false
 
     for i = 1, 95 do
