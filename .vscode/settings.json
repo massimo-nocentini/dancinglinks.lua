@@ -18,5 +18,6 @@
         "initializer_list": "c",
         "span": "c",
         "random": "c"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

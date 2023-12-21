@@ -1,26 +1,31 @@
 
 local dlx = require 'dlx'.dlx1
 local op = require 'operator'
+local unittest = require 'unittest'
 
-local stdin = {
-    literal = [[
+-- local stdin = {
+--     literal = [[
 
-    ]], -- or,
-    items = {
-        primary = {},
-        secondary = {},
-    },
-    options = {
-        [{'r4', 'c5', 'a9', 'b8'}] = a_value
-    }
-}  --. Finally,
+--     ]], -- or,
+--     items = {
+--         primary = {},
+--         secondary = {},
+--     },
+--     options = {
+--         [{'r4', 'c5', 'a9', 'b8'}] = a_value
+--     }
+-- }  --. Finally,
 
-local co = dlx.coroutine {
-    stdout = 'sols.txt',
-    stderr = 'log.txt',
-    -- stdin = '../knuth/test/queens/data_8x8.txt',
-    stdin = {
-        literal = [[
+local tests = {}
+
+function tests.test_queens ()
+
+    local co = dlx.coroutine {
+        stdout = 'sols.txt',
+        stderr = 'log.txt',
+        -- stdin = '../knuth/test/queens/data_8x8.txt',
+        stdin = {
+            literal = [[
 
 | This data produced by ./queens-dlx 8
 r4 c4 r3 c3 r5 c5 r2 c2 r6 c6 r1 c1 r7 c7 r0 c0 | a1 b1 a2 b2 a3 b3 a4 b4 a5 b5 a6 b6 a7 b7 a8 b8 a9 b9 aa ba ab bb ac bc ad bd
@@ -90,20 +95,47 @@ r7 c6 ad b6
 r7 c7 b7
 
 ]]
-    },
-    arguments = {
-        --S = 'tree.txt',
-        m = 1,
-        s = 541,
-        v = dlx.show.basics | dlx.show.choices | dlx.show.details | dlx.show.profile,
-    },
-    sanity_checking = false,
-}
+        },
+        arguments = {
+            --S = 'tree.txt',
+            m = 1,
+            s = 541,
+            v = dlx.show.basics | dlx.show.choices | dlx.show.details | dlx.show.profile,
+        },
+        sanity_checking = false,
+    }
+    
+    local sols = {}
 
-for i = 1, 95 do
-    local flag, sol = coroutine.resume (co)
-    if not flag then print (sol); break end
-    if not sol then break end
-    print('Solution ' .. i .. ':')
-    op.print_table (sol)
+    for i = 1, 95 do
+        local flag, sol = coroutine.resume (co)
+        
+        if not flag then print (sol); break end -- print an error message.
+        
+        if not sol then break end   -- all ok, just finished to enumerate the solution space.
+        
+        -- print('Solution ' .. i .. ':')
+        -- op.print_table (sol)
+
+        table.insert (sols, sol)
+    end
+
+    unittest.assert.equals (#sols, 92)
+
+    unittest.assert.equals (sols[1], {
+        ' r3 c1 a4 b5',
+        ' c0 a1 b6 r1',
+        ' c4 a6 b9 r2',
+        ' c6 ac b7 r6',
+        ' r5 c2 a7 b4',
+        ' r7 c3 aa b3',
+        ' r0 c5 a5 bc',
+        ' r4 c7 ab ba',
+    })
+
 end
+
+-----------------------------------------------------------------------------------------------
+
+local result = unittest.run (tests)
+print (result:summary ())

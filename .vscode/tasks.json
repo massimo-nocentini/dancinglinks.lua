@@ -22,7 +22,7 @@
 			"linux": {
 				"command": [
 					"ctangle dlx1.w &&",
-					"gcc -O3 -std=c17 -I/usr/local/sgb/include/ -Wall dlx1.c -o dlx1 -lgb"
+					"gcc -O3 -std=c99 -fPIC -I/usr/local/sgb/include/ -Wall dlx1.c -o dlx1 -lgb"
 				]
 			},
 			"group": "build",
@@ -125,7 +125,7 @@
 			"type": "shell",
 			"linux": {
 				"command": [
-					"../../src/dlx1/dlx < data_8x8.txt"
+					"../../src/dlx1/dlx1 < data_8x8.txt"
 				]
 			},
 			"dependsOn": [
