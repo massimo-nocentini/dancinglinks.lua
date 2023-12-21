@@ -3,22 +3,9 @@ local dlx = require 'dlx'.dlx1
 local op = require 'operator'
 local unittest = require 'unittest'
 
--- local stdin = {
---     literal = [[
-
---     ]], -- or,
---     items = {
---         primary = {},
---         secondary = {},
---     },
---     options = {
---         [{'r4', 'c5', 'a9', 'b8'}] = a_value
---     }
--- }  --. Finally,
-
 local tests = {}
 
-function tests.test_queens ()
+function tests.test_queens_literal ()
 
     local co = dlx.coroutine {
         stdout = 'sols.txt',
@@ -96,6 +83,55 @@ r7 c7 b7
 
 ]]
         },
+        arguments = {
+            --S = 'tree.txt',
+            m = 1,
+            s = 541,
+            v = dlx.show.basics | dlx.show.choices | dlx.show.details | dlx.show.profile,
+        },
+        sanity_checking = false,
+    }
+    
+    unittest.assert.equals (type (co), 'thread')
+
+    local sols, error_happened = {}, false
+
+    for i = 1, 95 do
+        local flag, sol = coroutine.resume (co)
+        
+        if not flag then error_happened = true; break end -- print an error message.
+        
+        if not sol then break end   -- all ok, just finished to enumerate the solution space.
+        
+        -- print('Solution ' .. i .. ':')
+        -- op.print_table (sol)
+
+        table.insert (sols, sol)
+    end
+
+    unittest.assert.isfalse (error_happened)
+    unittest.assert.equals (#sols, 92)
+
+    unittest.assert.equals (sols[1], {
+        ' r3 c1 a4 b5',
+        ' c0 a1 b6 r1',
+        ' c4 a6 b9 r2',
+        ' c6 ac b7 r6',
+        ' r5 c2 a7 b4',
+        ' r7 c3 aa b3',
+        ' r0 c5 a5 bc',
+        ' r4 c7 ab ba',
+    })
+
+end
+
+
+function tests.test_queens_stdin ()
+
+    local co = dlx.coroutine {
+        stdout = 'sols.txt',
+        stderr = 'log.txt',
+        stdin = '../knuth/test/queens/data_8x8.txt',
         arguments = {
             --S = 'tree.txt',
             m = 1,
