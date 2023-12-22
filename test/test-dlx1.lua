@@ -14,8 +14,9 @@ function tests.test_simple ()
         stdin = {
             literal = [[
 
-
+| items, primary only for this example.
 a b c
+| options now follows,
 a b
 a c
 c
@@ -34,19 +35,11 @@ b
     
     unittest.assert.equals (type (co), 'thread')
 
-    local sols, error_happened = {}, false
+    local sols = {}
 
-    while true do
-        local flag, sol = coroutine.resume (co)
-        
-        if not flag then error_happened = true; break end -- print an error message.
-        
-        if not sol then break end   -- all ok, just finished to enumerate the solution space.
-        
-        table.insert (sols, sol)
-    end
+    local error_free = coroutine.enumerate (co, function (i, sol) sols[i] = sol end)
 
-    unittest.assert.isfalse (error_happened)
+    unittest.assert.istrue (error_free)
     unittest.assert.equals (#sols, 2)
 
     unittest.assert.equals (sols, {
@@ -144,22 +137,11 @@ r7 c7 b7
     
     unittest.assert.equals (type (co), 'thread')
 
-    local sols, error_happened = {}, false
+    local sols = {}
 
-    for i = 1, 95 do
-        local flag, sol = coroutine.resume (co)
-        
-        if not flag then error_happened = true; break end -- print an error message.
-        
-        if not sol then break end   -- all ok, just finished to enumerate the solution space.
-        
-        -- print('Solution ' .. i .. ':')
-        -- op.print_table (sol)
-
-        table.insert (sols, sol)
-    end
-
-    unittest.assert.isfalse (error_happened)
+    local error_free = coroutine.enumerate (co, function (i, sol) sols[i] = sol end)
+    
+    unittest.assert.istrue (error_free)
     unittest.assert.equals (#sols, 92)
 
     unittest.assert.equals (sols[1], {
@@ -193,22 +175,11 @@ function tests.test_queens_stdin ()
     
     unittest.assert.equals (type (co), 'thread')
 
-    local sols, error_happened = {}, false
+    local sols = {}
 
-    for i = 1, 95 do
-        local flag, sol = coroutine.resume (co)
-        
-        if not flag then error_happened = true; break end -- print an error message.
-        
-        if not sol then break end   -- all ok, just finished to enumerate the solution space.
-        
-        -- print('Solution ' .. i .. ':')
-        -- op.print_table (sol)
-
-        table.insert (sols, sol)
-    end
-
-    unittest.assert.isfalse (error_happened)
+    local error_free = coroutine.enumerate (co, function (i, sol) sols[i] = sol end)
+    
+    unittest.assert.istrue (error_free)
     unittest.assert.equals (#sols, 92)
 
     unittest.assert.equals (sols[1], {
