@@ -33,19 +33,19 @@ b
         sanity_checking = false,
     }
     
-    unittest.assert.equals (type (co), 'thread')
+    unittest.assert.equals 'thread' (type (co))
 
     local sols = {}
 
     local error_free = coroutine.enumerate (co, op.setfield (sols))
 
     unittest.assert.istrue (error_free)
-    unittest.assert.equals (#sols, 2)
+    unittest.assert.equals (2) (#sols)
 
-    unittest.assert.equals (sols, {
+    unittest.assert.equals {
         { ' b a', ' c', },
         { ' b', ' a c', }
-    })
+    } (sols)
 
 end
 
@@ -135,16 +135,16 @@ r7 c7 b7
         sanity_checking = false,
     }
     
-    unittest.assert.equals (type (co), 'thread')
+    unittest.assert.equals 'thread' (type (co))
 
     local sols = {}
 
     local error_free = coroutine.enumerate (co, op.setfield (sols))
     
     unittest.assert.istrue (error_free)
-    unittest.assert.equals (#sols, 92)
+    unittest.assert.equals (92) (#sols)
 
-    unittest.assert.equals (sols[1], {
+    unittest.assert.equals {
         ' r3 c1 a4 b5',
         ' c0 a1 b6 r1',
         ' c4 a6 b9 r2',
@@ -153,7 +153,7 @@ r7 c7 b7
         ' r7 c3 aa b3',
         ' r0 c5 a5 bc',
         ' r4 c7 ab ba',
-    })
+    } (sols[1])
 
 end
 
@@ -173,16 +173,16 @@ function tests.test_queens_stdin ()
         sanity_checking = false,
     }
     
-    unittest.assert.equals (type (co), 'thread')
+    unittest.assert.equals 'thread' (type (co))
 
     local sols = {}
 
     local error_free = coroutine.enumerate (co, op.setfield (sols))
     
     unittest.assert.istrue (error_free)
-    unittest.assert.equals (#sols, 92)
+    unittest.assert.equals (92) (#sols)
 
-    unittest.assert.equals (sols[1], {
+    unittest.assert.equals {
         ' r3 c1 a4 b5',
         ' c0 a1 b6 r1',
         ' c4 a6 b9 r2',
@@ -191,7 +191,7 @@ function tests.test_queens_stdin ()
         ' r7 c3 aa b3',
         ' r0 c5 a5 bc',
         ' r4 c7 ab ba',
-    })
+    } (sols[1])
 
 end
 
