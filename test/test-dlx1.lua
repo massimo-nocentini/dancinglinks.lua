@@ -37,7 +37,7 @@ b
 
     local sols = {}
 
-    local error_free = coroutine.enumerate (co, function (i, sol) sols[i] = sol end)
+    local error_free = coroutine.enumerate (co, op.setfield (sols))
 
     unittest.assert.istrue (error_free)
     unittest.assert.equals (#sols, 2)
@@ -139,7 +139,7 @@ r7 c7 b7
 
     local sols = {}
 
-    local error_free = coroutine.enumerate (co, function (i, sol) sols[i] = sol end)
+    local error_free = coroutine.enumerate (co, op.setfield (sols))
     
     unittest.assert.istrue (error_free)
     unittest.assert.equals (#sols, 92)
@@ -177,7 +177,7 @@ function tests.test_queens_stdin ()
 
     local sols = {}
 
-    local error_free = coroutine.enumerate (co, function (i, sol) sols[i] = sol end)
+    local error_free = coroutine.enumerate (co, op.setfield (sols))
     
     unittest.assert.istrue (error_free)
     unittest.assert.equals (#sols, 92)
