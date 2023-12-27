@@ -36,7 +36,7 @@ typedef struct
     int prev, next;
 } dlx1Item_t;
 
-typedef struct dlxState_s
+typedef struct dlx1State_s
 {
     int random_seed;
     int randomizing;

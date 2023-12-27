@@ -5,6 +5,42 @@ local unittest = require 'unittest'
 
 local tests = {}
 
+function tests.test_unary ()
+
+    local co = dlx.coroutine {
+        stdout = 'sols.txt',
+        stderr = 'log.txt',
+        stdin = {
+            literal = [[
+
+| items, primary only for this example.
+a
+| options now follows,
+a
+]]
+        },
+        arguments = {
+            m = 1,
+            -- s = 541,
+            -- v = dlx.show.basics | dlx.show.choices | dlx.show.details | dlx.show.profile,
+        },
+        sanity_checking = false,
+    }
+    
+    unittest.assert.equals 'thread' (type (co))
+
+    local sols = {}
+
+    local error_free = coroutine.enumerate (co, op.setfield (sols))
+
+    unittest.assert.istrue (error_free)
+    unittest.assert.equals (1) (#sols)
+
+    unittest.assert.equals {
+        { {a = true} }
+    } (sols)
+
+end
 
 function tests.test_simple ()
 
@@ -43,8 +79,8 @@ b
     unittest.assert.equals (2) (#sols)
 
     unittest.assert.equals {
-        { ' b a', ' c', },
-        { ' b', ' a c', }
+        { { b = true, a = true }, {c = true}, },
+        { {b = true }, {a = true, c = true}, }
     } (sols)
 
 end
@@ -145,14 +181,14 @@ r7 c7 b7
     unittest.assert.equals (92) (#sols)
 
     unittest.assert.equals {
-        ' r3 c1 a4 b5',
-        ' c0 a1 b6 r1',
-        ' c4 a6 b9 r2',
-        ' c6 ac b7 r6',
-        ' r5 c2 a7 b4',
-        ' r7 c3 aa b3',
-        ' r0 c5 a5 bc',
-        ' r4 c7 ab ba',
+        {r3 = true, c1 = true, a4 = true, b5 = true},
+        {c0 = true, a1 = true, b6 = true, r1 = true},
+        {c4 = true, a6 = true, b9 = true, r2 = true},
+        {c6 = true, ac = true, b7 = true, r6 = true},
+        {r5 = true, c2 = true, a7 = true, b4 = true},
+        {r7 = true, c3 = true, aa = true, b3 = true},
+        {r0 = true, c5 = true, a5 = true, bc = true},
+        {r4 = true, c7 = true, ab = true, ba = true},
     } (sols[1])
 
 end
@@ -183,14 +219,14 @@ function tests.test_queens_stdin ()
     unittest.assert.equals (92) (#sols)
 
     unittest.assert.equals {
-        ' r3 c1 a4 b5',
-        ' c0 a1 b6 r1',
-        ' c4 a6 b9 r2',
-        ' c6 ac b7 r6',
-        ' r5 c2 a7 b4',
-        ' r7 c3 aa b3',
-        ' r0 c5 a5 bc',
-        ' r4 c7 ab ba',
+        {r3 = true, c1 = true, a4 = true, b5 = true},
+        {c0 = true, a1 = true, b6 = true, r1 = true},
+        {c4 = true, a6 = true, b9 = true, r2 = true},
+        {c6 = true, ac = true, b7 = true, r6 = true},
+        {r5 = true, c2 = true, a7 = true, b4 = true},
+        {r7 = true, c3 = true, aa = true, b3 = true},
+        {r0 = true, c5 = true, a5 = true, bc = true},
+        {r4 = true, c7 = true, ab = true, ba = true},
     } (sols[1])
 
 end
