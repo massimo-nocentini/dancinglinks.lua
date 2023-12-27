@@ -25,9 +25,9 @@
 #include "dlx1.h"
 
 /*
-    this algorithm (k=33) was first reported by dan bernstein many years ago in comp.lang.c. 
+    this algorithm (k=33) was first reported by dan bernstein many years ago in comp.lang.c.
     another version of this algorithm (now favored by bernstein) uses xor:
-        hash(i) = hash(i - 1) * 33 ^ str[i]; the magic of number 33 
+        hash(i) = hash(i - 1) * 33 ^ str[i]; the magic of number 33
     (why it works better than many other constants, prime or not) has never been adequately explained.
 */
 lua_Integer
@@ -60,18 +60,13 @@ void print_option(lua_State *L, dlx1State_t *dlx, int p, FILE *stream, int sol_p
 
     char *itm_name = NULL;
 
-    // luaL_Buffer b;
-    // luaL_buffinit(L, &b);
     lua_newtable(L);
 
     for (q = p;;)
     {
         itm_name = dlx->cl[dlx->nd[q].itm].name;
 
-        // luaL_addchar(&b, ' ');
-        // luaL_addstring(&b, itm_name);
-        // lua_pushinteger(L, djb2_string_hash(itm_name));
-        lua_pushboolean(L, 1);
+        lua_pushboolean(L, 1); // for now just use the Lua `true` as value for every key.
         lua_setfield(L, -2, itm_name);
 
         fprintf(stream, " " O "s", itm_name);
@@ -93,7 +88,6 @@ void print_option(lua_State *L, dlx1State_t *dlx, int p, FILE *stream, int sol_p
     }
     fprintf(stream, " (" O "d of " O "d)\n", k, dlx->nd[dlx->nd[p].itm].len);
 
-    // luaL_pushresult(&b);
     if (sol_pos != invalid_sol_pos)
     {
         lua_seti(L, -2, sol_pos);

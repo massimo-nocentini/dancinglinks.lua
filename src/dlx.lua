@@ -1,11 +1,13 @@
 
 
 local libdlx1 = require 'libdlx1'
+local libdlxgenerator = require 'libdlxgenerator'
 
 local dlx = {
     dlx1 = {
         show = libdlx1.show
-    }
+    },
+    generator = libdlxgenerator,
 }
 
 local function parse_argv (tbl)
