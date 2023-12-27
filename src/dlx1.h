@@ -1,9 +1,10 @@
 
+#define max_name_length 64
 
 #define max_level 10000
 #define max_cols 100000
 #define max_nodes 25000000
-#define bufsize (9 * max_cols + 3)
+#define bufsize ((max_name_length + 1) * max_cols + 3)
 
 #define show_basics 1
 #define show_choices 2
@@ -15,8 +16,6 @@
 #define show_max_deg 2048
 
 #define root 0
-
-#define max_name_length 64
 
 #include <stdio.h>
 

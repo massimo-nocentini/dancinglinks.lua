@@ -37,7 +37,7 @@ a
     unittest.assert.equals (1) (#sols)
 
     unittest.assert.equals {
-        { {a = true} }
+        { updates = 1, options = {{a = true}} }
     } (sols)
 
 end
@@ -79,8 +79,8 @@ b
     unittest.assert.equals (2) (#sols)
 
     unittest.assert.equals {
-        { { b = true, a = true }, {c = true}, },
-        { {b = true }, {a = true, c = true}, }
+        { updates = 5, options = {{ b = true, a = true }, {c = true}}, },
+        { updates = 8, options = {{b = true }, {a = true, c = true}}, }
     } (sols)
 
 end
@@ -181,14 +181,17 @@ r7 c7 b7
     unittest.assert.equals (92) (#sols)
 
     unittest.assert.equals {
-        {r3 = true, c1 = true, a4 = true, b5 = true},
-        {c0 = true, a1 = true, b6 = true, r1 = true},
-        {c4 = true, a6 = true, b9 = true, r2 = true},
-        {c6 = true, ac = true, b7 = true, r6 = true},
-        {r5 = true, c2 = true, a7 = true, b4 = true},
-        {r7 = true, c3 = true, aa = true, b3 = true},
-        {r0 = true, c5 = true, a5 = true, bc = true},
-        {r4 = true, c7 = true, ab = true, ba = true},
+        updates = 871, 
+        options = {
+            {r3 = true, c1 = true, a4 = true, b5 = true},
+            {c0 = true, a1 = true, b6 = true, r1 = true},
+            {c4 = true, a6 = true, b9 = true, r2 = true},
+            {c6 = true, ac = true, b7 = true, r6 = true},
+            {r5 = true, c2 = true, a7 = true, b4 = true},
+            {r7 = true, c3 = true, aa = true, b3 = true},
+            {r0 = true, c5 = true, a5 = true, bc = true},
+            {r4 = true, c7 = true, ab = true, ba = true},
+        }
     } (sols[1])
 
 end
@@ -219,14 +222,17 @@ function tests.test_queens_stdin ()
     unittest.assert.equals (92) (#sols)
 
     unittest.assert.equals {
-        {r3 = true, c1 = true, a4 = true, b5 = true},
-        {c0 = true, a1 = true, b6 = true, r1 = true},
-        {c4 = true, a6 = true, b9 = true, r2 = true},
-        {c6 = true, ac = true, b7 = true, r6 = true},
-        {r5 = true, c2 = true, a7 = true, b4 = true},
-        {r7 = true, c3 = true, aa = true, b3 = true},
-        {r0 = true, c5 = true, a5 = true, bc = true},
-        {r4 = true, c7 = true, ab = true, ba = true},
+        updates = 871, 
+        options = {
+            {r3 = true, c1 = true, a4 = true, b5 = true},
+            {c0 = true, a1 = true, b6 = true, r1 = true},
+            {c4 = true, a6 = true, b9 = true, r2 = true},
+            {c6 = true, ac = true, b7 = true, r6 = true},
+            {r5 = true, c2 = true, a7 = true, b4 = true},
+            {r7 = true, c3 = true, aa = true, b3 = true},
+            {r0 = true, c5 = true, a5 = true, bc = true},
+            {r4 = true, c7 = true, ab = true, ba = true},
+        }
     } (sols[1])
 
 end

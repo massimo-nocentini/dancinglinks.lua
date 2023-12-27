@@ -582,9 +582,16 @@ advance:
 
                 lua_newtable(L);
 
+                lua_pushinteger(L, dlx->updates);
+                lua_setfield(L, -2, "updates");
+
+                lua_newtable(L);
+
                 for (kcontext->k = 0; kcontext->k <= dlx->level; kcontext->k++)
                     print_option(L, dlx, dlx->choice[kcontext->k], dlx->stream_out, kcontext->k + 1);
                 fflush(dlx->stream_out);
+
+                lua_setfield(L, -2, "options");
 
                 lua_yieldk(L, 1, ctx, &dlx1_kfunction);
             resume:
