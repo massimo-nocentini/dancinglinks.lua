@@ -27,16 +27,16 @@ a
         sanity_checking = false,
     }
     
-    unittest.assert.equals 'thread' (type (co))
+    unittest.assert.equals ''  'thread' (type (co))
 
     local sols = {}
 
     local error_free = coroutine.enumerate (co, op.setfield (sols))
 
     unittest.assert.istrue (error_free)
-    unittest.assert.equals (1) (#sols)
+    unittest.assert.equals ''  (1) (#sols)
 
-    unittest.assert.equals {
+    unittest.assert.equals ''  {
         { updates = 1, options = {{a = true}} }
     } (sols)
 
@@ -69,16 +69,16 @@ b
         sanity_checking = false,
     }
     
-    unittest.assert.equals 'thread' (type (co))
+    unittest.assert.equals ''  'thread' (type (co))
 
     local sols = {}
 
     local error_free = coroutine.enumerate (co, op.setfield (sols))
 
     unittest.assert.istrue (error_free)
-    unittest.assert.equals (2) (#sols)
+    unittest.assert.equals ''  (2) (#sols)
 
-    unittest.assert.equals {
+    unittest.assert.equals ''  {
         { updates = 5, options = {{ b = true, a = true }, {c = true}}, },
         { updates = 8, options = {{b = true }, {a = true, c = true}}, }
     } (sols)
@@ -171,16 +171,16 @@ r7 c7 b7
         sanity_checking = false,
     }
     
-    unittest.assert.equals 'thread' (type (co))
+    unittest.assert.equals ''  'thread' (type (co))
 
     local sols = {}
 
     local error_free = coroutine.enumerate (co, op.setfield (sols))
     
     unittest.assert.istrue (error_free)
-    unittest.assert.equals (92) (#sols)
+    unittest.assert.equals 'The whole enumeration of the 8-Queens problem is well known.' (92) (#sols)
 
-    unittest.assert.equals {
+    unittest.assert.equals ''  {
         updates = 871, 
         options = {
             {r3 = true, c1 = true, a4 = true, b5 = true},
@@ -212,16 +212,16 @@ function tests.test_queens_stdin ()
         sanity_checking = false,
     }
     
-    unittest.assert.equals 'thread' (type (co))
+    unittest.assert.equals ''  'thread' (type (co))
 
     local sols = {}
 
     local error_free = coroutine.enumerate (co, op.setfield (sols))
     
     unittest.assert.istrue (error_free)
-    unittest.assert.equals (92) (#sols)
+    unittest.assert.equals ''  (92) (#sols)
 
-    unittest.assert.equals {
+    unittest.assert.equals ''  {
         updates = 871, 
         options = {
             {r3 = true, c1 = true, a4 = true, b5 = true},
@@ -239,4 +239,8 @@ end
 
 -----------------------------------------------------------------------------------------------
 
-print (unittest.run (tests):summary ())
+local result = unittest.bootstrap.result ()
+
+unittest.bootstrap.suite (tests):run (tests, result)
+
+print (result)

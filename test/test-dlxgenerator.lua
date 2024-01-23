@@ -8,7 +8,7 @@ local tests = {}
 
 function tests.test_generator_queens ()
 
-    unittest.assert.equals [[
+unittest.assert.equals '' [[
 | This data produced by Lua 
 r4 c4 r3 c3 r5 c5 r2 c2 r6 c6 r1 c1 r7 c7 r0 c0 | a1 b1 a2 b2 a3 b3 a4 b4 a5 b5 a6 b6 a7 b7 a8 b8 a9 b9 aa ba ab bb ac bc ad bd
 r0 c0 b7
@@ -81,4 +81,8 @@ end
 
 -----------------------------------------------------------------------------------------------
 
-print (unittest.run (tests):summary ())
+local result = unittest.bootstrap.result ()
+
+unittest.bootstrap.suite (tests):run (tests, result)
+
+print (result)
